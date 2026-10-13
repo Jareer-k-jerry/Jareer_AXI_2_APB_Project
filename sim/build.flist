@@ -1,0 +1,33 @@
+# =============================================================
+# AXI2APB DUT + Phase 2 UVM File List
+# Top module: axi2apb_tb_top
+# =============================================================
+
+# -----------------------------
+# RTL dependency order
+# -----------------------------
+../rtl/fifo.sv
+../rtl/includes/axi_single_slice.sv
+../rtl/includes/axi_aw_buffer.sv
+../rtl/includes/axi_ar_buffer.sv
+../rtl/includes/axi_w_buffer.sv
+../rtl/includes/axi_r_buffer.sv
+../rtl/includes/axi_b_buffer.sv
+../rtl/axi2apb.sv
+
+# -----------------------------
+# UVM include directories
+# -----------------------------
++incdir+../tb
++incdir+../tb/axi_master_agent
++incdir+../tb/apb_slave_agent
++incdir+../tb/environment
++incdir+../tb/tests
+
+# -----------------------------
+# Testbench compile order
+# -----------------------------
+../tb/interfaces/axi4_if.sv
+../tb/interfaces/apb_if.sv
+../tb/axi2apb_pkg.sv
+../tb/top/axi2apb_tb_top.sv
