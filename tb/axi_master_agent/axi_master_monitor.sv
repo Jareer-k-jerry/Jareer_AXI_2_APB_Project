@@ -29,7 +29,7 @@ class axi_master_monitor extends uvm_monitor;
   endfunction : build_phase
 
   virtual task run_phase(uvm_phase phase);
-    `uvm_info(get_type_name(), "run_phase: AXI master monitor active", UVM_LOW)
+    `uvm_info(get_type_name(), "run_phase: AXI master monitor active", UVM_HIGH)
 
     // Wait until reset is de-asserted
     wait (vif.ARESETn === 1'b1);

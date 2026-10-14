@@ -39,6 +39,10 @@ class axi2apb_scoreboard extends uvm_scoreboard;
   int unsigned apb_read_count;
   int unsigned pslverr_count;
 
+  // Configuration knob: set to 0 for smoke/reset/idle tests where 0 transactions is expected.
+  // For standard transaction tests, defaults to 1.
+  bit check_expected_transactions = 1'b1;
+
   // ---------------------------------------------------------------------------
   // Constructor
   // ---------------------------------------------------------------------------
@@ -53,6 +57,7 @@ class axi2apb_scoreboard extends uvm_scoreboard;
   // ---------------------------------------------------------------------------
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+    void'(uvm_config_db#(bit)::get(this, "", "check_expected_transactions", check_expected_transactions));
     matches         = 0;
     errors          = 0;
     axi_write_count = 0;
@@ -60,7 +65,6 @@ class axi2apb_scoreboard extends uvm_scoreboard;
     apb_write_count = 0;
     apb_read_count  = 0;
     pslverr_count   = 0;
-    `uvm_info(get_type_name(), "build_phase: axi2apb_scoreboard initialized", UVM_LOW)
   endfunction : build_phase
 
   // ---------------------------------------------------------------------------
@@ -264,7 +268,11 @@ class axi2apb_scoreboard extends uvm_scoreboard;
     if (errors == 0 && matches > 0) begin
       `uvm_info(get_type_name(), "  >>> SCOREBOARD RESULT: ALL TRANSACTIONS MATCHED (PASSED) <<<   ", UVM_LOW)
     end else if (errors == 0 && matches == 0) begin
-      `uvm_warning(get_type_name(), "  >>> SCOREBOARD RESULT: NO TRANSACTIONS WERE CHECKED <<<        ")
+      if (!check_expected_transactions) begin
+        `uvm_info(get_type_name(), "  >>> SCOREBOARD RESULT: ZERO TRANSACTIONS EXPECTED (IDLE/SMOKE TEST PASSED) <<<", UVM_LOW)
+      end else begin
+        `uvm_error(get_type_name(), "  >>> SCOREBOARD RESULT: ZERO TRANSACTIONS PROCESSED (EXPECTED TRANSACTIONS) <<<")
+      end
     end else begin
       `uvm_error(get_type_name(), $sformatf("  >>> SCOREBOARD RESULT: FAILED WITH %0d ERRORS <<<       ", errors))
     end

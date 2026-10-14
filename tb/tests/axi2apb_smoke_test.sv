@@ -15,6 +15,12 @@ class axi2apb_smoke_test extends axi2apb_base_test;
     super.new(name, parent);
   endfunction : new
 
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    // Inform scoreboard that this is a reset/idle test with 0 expected transfers
+    uvm_config_db#(bit)::set(this, "env.scoreboard", "check_expected_transactions", 1'b0);
+  endfunction : build_phase
+
   virtual task run_phase(uvm_phase phase);
     int unsigned pre_reset_cycles = 0;
     int unsigned post_reset_cycles = 0;

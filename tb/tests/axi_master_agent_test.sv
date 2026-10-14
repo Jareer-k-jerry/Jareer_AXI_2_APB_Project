@@ -25,8 +25,10 @@ class axi_master_agent_test extends uvm_test;
 
   virtual function void end_of_elaboration_phase(uvm_phase phase);
     super.end_of_elaboration_phase(phase);
-    `uvm_info(get_type_name(), "=== [end_of_elaboration_phase] Test topology: ===", UVM_LOW)
-    uvm_top.print_topology();
+    if (uvm_report_enabled(UVM_HIGH, UVM_INFO, get_type_name())) begin
+      `uvm_info(get_type_name(), "=== [end_of_elaboration_phase] Test topology: ===", UVM_HIGH)
+      uvm_top.print_topology();
+    end
   endfunction : end_of_elaboration_phase
 
   virtual task run_phase(uvm_phase phase);

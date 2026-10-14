@@ -21,7 +21,7 @@ class axi2apb_env extends uvm_env;
 
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    `uvm_info(get_type_name(), "build_phase: constructing verification environment components", UVM_LOW)
+    `uvm_info(get_type_name(), "build_phase: constructing verification environment components", UVM_HIGH)
 
     axi_agent  = axi_master_agent::type_id::create("axi_agent", this);
     apb_agent  = apb_slave_agent::type_id::create("apb_agent", this);
@@ -30,7 +30,7 @@ class axi2apb_env extends uvm_env;
 
   virtual function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-    `uvm_info(get_type_name(), "connect_phase: connecting agent monitor analysis ports to scoreboard", UVM_LOW)
+    `uvm_info(get_type_name(), "connect_phase: connecting agent monitor analysis ports to scoreboard", UVM_HIGH)
 
     // Connect AXI and APB agent analysis ports to the scoreboard exports
     axi_agent.analysis_port.connect(scoreboard.axi_export);

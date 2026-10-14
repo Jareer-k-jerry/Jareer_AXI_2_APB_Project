@@ -7,13 +7,21 @@ TEST ?= apb_agent_validation_test
 # make compile TEST=<test_name>
 # ============================================================
 
-compile:
-	mkdir -p ./out
-	vcs -sverilog -f build.flist -ntb_opts uvm-1.2 -cm line+tgl+cond -full64 -debug_all +UVM_TESTNAME=$(TEST)
-	cd ./out && rm -rf build_$(TEST)
-	cd ./out && mkdir -p build_$(TEST)
-	mv csrc simv.daidir simv.vdb simv vc_hdrs.h ./out/build_$(TEST)
+# Shell configuration for robust command execution and pipeline error propagation
+SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
 
+compile:
+	@mkdir -p ./out
+	vcs -sverilog -f build.flist -ntb_opts uvm-1.2 -cm line+tgl+cond -full64 -debug_all +UVM_TESTNAME=$(TEST)
+	@rm -rf ./out/build_$(TEST)
+	@mkdir -p ./out/build_$(TEST)
+	@for item in csrc simv.daidir simv.vdb simv vc_hdrs.h ucli.key; do \
+		if [ -e "$$item" ]; then \
+			mv "$$item" ./out/build_$(TEST)/; \
+		fi; \
+	done
+	@test -f ./out/build_$(TEST)/simv || (echo "ERROR: Compilation finished but simv executable was not found!" && exit 1)
 
 # ============================================================
 # SIMULATION
@@ -22,7 +30,8 @@ compile:
 # ============================================================
 
 sim:
-	cd ./out/build_$(TEST) && ./simv -cm line+tgl+cond +UVM_TESTNAME=$(TEST) > build_$(TEST).log
+	@test -f ./out/build_$(TEST)/simv || (echo "ERROR: Test executable ./out/build_$(TEST)/simv does not exist. Run 'make compile TEST=$(TEST)' first." && exit 1)
+	cd ./out/build_$(TEST) && ./simv -cm line+tgl+cond +UVM_TESTNAME=$(TEST) | tee build_$(TEST).log
 
 
 # ============================================================

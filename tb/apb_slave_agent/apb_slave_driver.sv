@@ -44,7 +44,7 @@ class apb_slave_driver extends uvm_driver #(apb_slave_item);
     bit [31:0] current_wdata;
     bit [31:0] response_data;
 
-    `uvm_info(get_type_name(), "run_phase: APB slave driver active", UVM_LOW)
+    `uvm_info(get_type_name(), "run_phase: APB slave driver active", UVM_HIGH)
     drive_idle();
 
     // Wait until reset is de-asserted

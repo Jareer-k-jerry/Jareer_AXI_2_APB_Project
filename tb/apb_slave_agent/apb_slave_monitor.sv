@@ -28,7 +28,7 @@ class apb_slave_monitor extends uvm_monitor;
   endfunction : build_phase
 
   virtual task run_phase(uvm_phase phase);
-    `uvm_info(get_type_name(), "run_phase: APB slave monitor active", UVM_LOW)
+    `uvm_info(get_type_name(), "run_phase: APB slave monitor active", UVM_HIGH)
 
     // Wait until reset is de-asserted
     wait (vif.PRESETn === 1'b1);

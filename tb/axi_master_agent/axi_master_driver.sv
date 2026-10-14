@@ -39,7 +39,7 @@ class axi_master_driver extends uvm_driver #(axi_master_item);
   virtual task run_phase(uvm_phase phase);
     axi_master_item tr;
 
-    `uvm_info(get_type_name(), "run_phase: AXI master driver active", UVM_LOW)
+    `uvm_info(get_type_name(), "run_phase: AXI master driver active", UVM_HIGH)
     drive_idle();
 
     // Wait until reset is de-asserted
