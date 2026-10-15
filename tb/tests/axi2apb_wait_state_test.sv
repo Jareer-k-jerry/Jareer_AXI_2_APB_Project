@@ -27,8 +27,9 @@ class axi2apb_wait_state_test extends axi2apb_base_test;
     `uvm_info(get_type_name(), "   TEST 4: APB WAIT STATES TEST (WRITE & READ WITH PREADY LOW)   ", UVM_LOW)
     `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
 
-    // Wait for reset release
-    #100ns;
+    // Wait for reset release explicitly
+    wait (axi_vif != null && axi_vif.ARESETn === 1'b1);
+    #20ns;
 
     // -------------------------------------------------------------------------
     // Phase 1: Write transaction with 3 APB wait cycles
@@ -82,11 +83,10 @@ class axi2apb_wait_state_test extends axi2apb_base_test;
                                             env.scoreboard.matches, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "Both wait-state write (3 cycles) and read (4 cycles) verified successfully.", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
+      `uvm_info(get_type_name(), "   TEST 4: APB WAIT STATES TEST PASSED                           ", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
     end
-
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
-    `uvm_info(get_type_name(), "   TEST 4: APB WAIT STATES TEST PASSED                           ", UVM_LOW)
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
 
     phase.drop_objection(this, "Ending axi2apb_wait_state_test");
   endtask : run_phase

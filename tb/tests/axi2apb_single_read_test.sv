@@ -25,8 +25,9 @@ class axi2apb_single_read_test extends axi2apb_base_test;
     `uvm_info(get_type_name(), "   TEST 3: SINGLE AXI READ WITH IMMEDIATE APB COMPLETION         ", UVM_LOW)
     `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
 
-    // Wait for reset release
-    #100ns;
+    // Wait for reset release explicitly
+    wait (axi_vif != null && axi_vif.ARESETn === 1'b1);
+    #20ns;
 
     fork
       // Process 1: APB Slave reacts with known PRDATA value (0 wait cycles)
@@ -58,11 +59,10 @@ class axi2apb_single_read_test extends axi2apb_base_test;
                                             env.scoreboard.matches, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "Single read verified successfully by transaction scoreboard (PRDATA=0xFEED_FACE).", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
+      `uvm_info(get_type_name(), "   TEST 3: SINGLE AXI READ PASSED                                ", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
     end
-
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
-    `uvm_info(get_type_name(), "   TEST 3: SINGLE AXI READ PASSED                                ", UVM_LOW)
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
 
     phase.drop_objection(this, "Ending axi2apb_single_read_test");
   endtask : run_phase

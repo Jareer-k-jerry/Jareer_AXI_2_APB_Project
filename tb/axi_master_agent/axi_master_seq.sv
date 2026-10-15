@@ -13,11 +13,15 @@
 class axi_single_write_seq extends uvm_sequence #(axi_master_item);
   `uvm_object_utils(axi_single_write_seq)
 
-  bit [31:0] target_addr = 32'h0000_1000;
-  bit [31:0] write_data  = 32'hDEAD_BEEF;
-  bit [15:0] trans_id    = 16'h0001;
-  bit [9:0]  user_val    = 10'h00A;
-  int unsigned bready_delay = 0;
+  rand bit [31:0]    target_addr  = 32'h0000_1000;
+  rand bit [31:0]    write_data   = 32'hDEAD_BEEF;
+  rand bit [15:0]    trans_id     = 16'h0001;
+  rand bit [9:0]     user_val     = 10'h00A;
+  rand int unsigned  bready_delay = 0;
+
+  constraint bready_delay_c {
+    bready_delay inside {[0:10]};
+  }
 
   function new(string name = "axi_single_write_seq");
     super.new(name);
@@ -51,10 +55,14 @@ endclass : axi_single_write_seq
 class axi_single_read_seq extends uvm_sequence #(axi_master_item);
   `uvm_object_utils(axi_single_read_seq)
 
-  bit [31:0] target_addr = 32'h0000_1000;
-  bit [15:0] trans_id    = 16'h0002;
-  bit [9:0]  user_val    = 10'h00B;
-  int unsigned rready_delay = 0;
+  rand bit [31:0]    target_addr  = 32'h0000_1000;
+  rand bit [15:0]    trans_id     = 16'h0002;
+  rand bit [9:0]     user_val     = 10'h00B;
+  rand int unsigned  rready_delay = 0;
+
+  constraint rready_delay_c {
+    rready_delay inside {[0:10]};
+  }
 
   function new(string name = "axi_single_read_seq");
     super.new(name);
@@ -108,5 +116,51 @@ class axi_write_then_read_seq extends uvm_sequence #(axi_master_item);
     rd_seq.start(m_sequencer);
   endtask : body
 endclass : axi_write_then_read_seq
+
+// -----------------------------------------------------------------------------
+// Sequence 4: Constrained-Random AXI Master Sequence
+// Generates a configurable number of legal randomized read and write transfers.
+// -----------------------------------------------------------------------------
+class axi_constrained_random_seq extends uvm_sequence #(axi_master_item);
+  `uvm_object_utils(axi_constrained_random_seq)
+
+  rand int unsigned num_trans;
+
+  // Constrain transfer count to reasonable testbench bounds
+  constraint num_trans_c {
+    num_trans inside {[1:1000]};
+  }
+
+  function new(string name = "axi_constrained_random_seq");
+    super.new(name);
+    num_trans = 20; // Default count
+  endfunction : new
+
+  virtual task body();
+    `uvm_info(get_type_name(), $sformatf("Starting constrained-random AXI sequence for %0d transactions", num_trans), UVM_LOW)
+
+    for (int i = 0; i < num_trans; i++) begin
+      axi_master_item item;
+      item = axi_master_item::type_id::create($sformatf("rand_item_%0d", i));
+
+      start_item(item);
+      if (!item.randomize() with {
+        // Legal address space: 32-bit aligned within valid APB address range (up to 64KB)
+        addr[1:0]  == 2'b00;
+        addr[31:16] == 16'h0000;
+        // Moderate backpressure delays
+        bready_delay inside {[0:3]};
+        rready_delay inside {[0:3]};
+      }) begin
+        `uvm_fatal(get_type_name(), $sformatf("Randomization failed for transaction #%0d", i))
+      end
+      finish_item(item);
+
+      `uvm_info(get_type_name(), $sformatf("Completed random transfer #%0d/%0d: %s",
+                                          i+1, num_trans, item.convert2string()), UVM_MEDIUM)
+    end
+    `uvm_info(get_type_name(), "Constrained-random AXI sequence completed.", UVM_LOW)
+  endtask : body
+endclass : axi_constrained_random_seq
 
 `endif // AXI_MASTER_SEQ_SV

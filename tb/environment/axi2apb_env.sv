@@ -11,9 +11,10 @@
 class axi2apb_env extends uvm_env;
   `uvm_component_utils(axi2apb_env)
 
-  axi_master_agent   axi_agent;
-  apb_slave_agent    apb_agent;
-  axi2apb_scoreboard scoreboard;
+  axi_master_agent            axi_agent;
+  apb_slave_agent             apb_agent;
+  axi2apb_scoreboard          scoreboard;
+  axi2apb_functional_coverage coverage;
 
   function new(string name = "axi2apb_env", uvm_component parent = null);
     super.new(name, parent);
@@ -26,15 +27,20 @@ class axi2apb_env extends uvm_env;
     axi_agent  = axi_master_agent::type_id::create("axi_agent", this);
     apb_agent  = apb_slave_agent::type_id::create("apb_agent", this);
     scoreboard = axi2apb_scoreboard::type_id::create("scoreboard", this);
+    coverage   = axi2apb_functional_coverage::type_id::create("coverage", this);
   endfunction : build_phase
 
   virtual function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-    `uvm_info(get_type_name(), "connect_phase: connecting agent monitor analysis ports to scoreboard", UVM_HIGH)
+    `uvm_info(get_type_name(), "connect_phase: connecting agent monitor analysis ports to scoreboard & coverage", UVM_HIGH)
 
     // Connect AXI and APB agent analysis ports to the scoreboard exports
     axi_agent.analysis_port.connect(scoreboard.axi_export);
     apb_agent.analysis_port.connect(scoreboard.apb_export);
+
+    // Connect AXI and APB agent analysis ports to coverage exports
+    axi_agent.analysis_port.connect(coverage.axi_cov_export);
+    apb_agent.analysis_port.connect(coverage.apb_cov_export);
   endfunction : connect_phase
 
 endclass : axi2apb_env

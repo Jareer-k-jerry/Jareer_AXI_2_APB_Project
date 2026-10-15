@@ -18,6 +18,8 @@ echo "================================================================="
 mkdir -p ./out/build_${TEST}
 
 vcs -sverilog \
+    -timescale=1ns/1ps \
+    -override_timescale \
     -f build.flist \
     -ntb_opts uvm-1.2 \
     -cm line+tgl+cond \

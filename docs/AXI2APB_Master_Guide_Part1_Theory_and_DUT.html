@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ur-Latn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AXI2APB Bridge Master Guide - Part 1: Theory, Protocols & DUT Architecture</title>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #3b82f6;
+    --primary-subtle: #eff6ff;
+    --secondary: #0d9488;
+    --secondary-subtle: #f0fdfa;
+    --accent: #d97706;
+    --accent-subtle: #fffbeb;
+    --text-main: #1f2937;
+    --text-muted: #4b5563;
+    --bg-main: #f8fafc;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --border-hover: #cbd5e1;
+    --success-bg: #ecfdf5;
+    --success-border: #10b981;
+    --success-text: #065f46;
+    --danger-bg: #fef2f2;
+    --danger-border: #ef4444;
+    --danger-text: #991b1b;
+    --code-bg: #0f172a;
+    --code-text: #f1f5f9;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.7;
+    font-size: 16px;
+    padding: 0 1rem;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 0 4rem 0;
+  }
+
+  header.guide-header {
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    color: #ffffff;
+    padding: 3rem 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px -5px rgba(30, 58, 138, 0.25);
+    margin-bottom: 2.5rem;
+  }
+
+  header.guide-header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    line-height: 1.25;
+    margin-bottom: 0.75rem;
+  }
+
+  header.guide-header p.subtitle {
+    font-size: 1.15rem;
+    opacity: 0.92;
+    max-width: 900px;
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    color: #ffffff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    backdrop-filter: blur(4px);
+  }
+
+  .badge-light {
+    background: #ffffff;
+    color: #1e3a8a;
+  }
+
+  nav.toc-nav {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+  }
+
+  nav.toc-nav h3 {
+    color: var(--primary);
+    font-size: 1.2rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  nav.toc-nav ul {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 0.6rem;
+  }
+
+  nav.toc-nav a {
+    color: var(--primary-light);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: color 0.15s;
+  }
+
+  nav.toc-nav a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+
+  section.guide-section {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-bottom: 2.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+
+  h2.section-title {
+    color: var(--primary);
+    font-size: 1.8rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--primary-subtle);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  h3.sub-title {
+    color: #0f172a;
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 1.75rem 0 0.85rem 0;
+  }
+
+  h4.minor-title {
+    color: #334155;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 1.25rem 0 0.5rem 0;
+  }
+
+  p {
+    margin-bottom: 1rem;
+    color: var(--text-main);
+  }
+
+  .callout {
+    border-left: 5px solid;
+    padding: 1.25rem 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    font-size: 0.98rem;
+  }
+
+  .callout-info {
+    background-color: var(--primary-subtle);
+    border-color: var(--primary-light);
+    color: #1e3a8a;
+  }
+
+  .callout-tip {
+    background-color: var(--secondary-subtle);
+    border-color: var(--secondary);
+    color: #134e4a;
+  }
+
+  .callout-warning {
+    background-color: var(--accent-subtle);
+    border-color: var(--accent);
+    color: #92400e;
+  }
+
+  .callout-interview {
+    background-color: #fdf4ff;
+    border-color: #c084fc;
+    color: #581c87;
+  }
+
+  .callout strong {
+    display: block;
+    font-size: 1.05rem;
+    margin-bottom: 0.4rem;
+  }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  table.data-table th, table.data-table td {
+    border: 1px solid var(--border-color);
+    padding: 0.85rem 1rem;
+    text-align: left;
+  }
+
+  table.data-table th {
+    background-color: #f1f5f9;
+    color: #1e293b;
+    font-weight: 700;
+  }
+
+  table.data-table tr:nth-child(even) {
+    background-color: #f8fafc;
+  }
+
+  table.data-table tr:hover {
+    background-color: #f1f5f9;
+  }
+
+  .channel-card {
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: #fafafa;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .channel-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+    border-color: var(--border-hover);
+  }
+
+  .channel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+
+  .channel-tag {
+    background: #e0e7ff;
+    color: #3730a3;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+  }
+
+  .diagram-container {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .diagram-container svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .fsm-state-box {
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    background: #eff6ff;
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    display: inline-block;
+    color: #1e3a8a;
+  }
+
+  .interview-q {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+  }
+
+  .interview-q .question-header {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .interview-q .question-body {
+    padding: 1.25rem;
+    color: var(--text-main);
+  }
+
+  .interview-q .answer-highlight {
+    background: #f0fdf4;
+    border-left: 4px solid #10b981;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95rem;
+  }
+
+  code {
+    font-family: Consolas, Monaco, "Courier New", Courier, monospace;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-weight: 600;
+  }
+
+  pre code {
+    display: block;
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  footer {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border-color);
+    margin-top: 3rem;
+  }
+
+  @media print {
+    body {
+      background: #ffffff;
+      font-size: 12pt;
+    }
+    header.guide-header {
+      background: #1e3a8a !important;
+      color: #ffffff !important;
+      box-shadow: none;
+    }
+    section.guide-section {
+      border: 1px solid #ccc;
+      box-shadow: none;
+      page-break-inside: avoid;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Main Header -->
+  <header class="guide-header">
+    <h1>AXI4 to APB Bridge — Master Learning & Interview Guide</h1>
+    <p class="subtitle">
+      Part 1: Protocol Theory from Scratch (AXI4 vs APB), Bridging Challenges, Complete DUT Architecture, Internal FIFOs, FSM State Transitions, Signal Mapping & High-Yield Technical Interview Questions.
+    </p>
+    <div class="badge-row">
+      <span class="badge badge-light">Part 1: Theory & DUT Architecture</span>
+      <span class="badge">Language: Roman Urdu</span>
+      <span class="badge">AMBA AXI4 Protocol</span>
+      <span class="badge">AMBA APB Protocol</span>
+      <span class="badge">Finite State Machine (FSM)</span>
+      <span class="badge">ASIC/SoC Design Verification</span>
+    </div>
+  </header>
+
+  <!-- Table of Contents -->
+  <nav class="toc-nav">
+    <h3>📖 Fehrist (Table of Contents) - Part 1</h3>
+    <ul>
+      <li><a href="#sec1">1. Introduction: Project Ka Maqsad & SoC Bridge Ki Zaroorat</a></li>
+      <li><a href="#sec2">2. AMBA AXI4 Protocol Deep Dive (5 Channels & Handshakes)</a></li>
+      <li><a href="#sec3">3. AMBA APB Protocol Deep Dive (2-Phase Bus & Wait States)</a></li>
+      <li><a href="#sec4">4. AXI vs APB Comparison & Bridging Challenges</a></li>
+      <li><a href="#sec5">5. AXI2APB Bridge DUT Internal Architecture & Decoupling FIFOs</a></li>
+      <li><a href="#sec6">6. Bridge Control FSM & State Transitions Step-by-Step</a></li>
+      <li><a href="#sec7">7. Signal Mapping & Pin Connectivity (Kaunsa Signal Kahan Jata Hai)</a></li>
+      <li><a href="#sec8">8. Design Limitations & Assumptions in this Project</a></li>
+      <li><a href="#sec9">9. Top 10 Core Theory & Design Interview Questions (Roman Urdu)</a></li>
+    </ul>
+  </nav>
+
+  <!-- SECTION 1 -->
+  <section id="sec1" class="guide-section">
+    <h2 class="section-title">1. Introduction: Project Ka Maqsad & SoC Bridge Ki Zaroorat</h2>
+    
+    <p>
+      Modern <strong>System-on-Chip (SoC)</strong> ke andar bohot saray components hotay hain jaisay Multi-core Processors (CPU/GPU), DDR Memory Controllers, DMA Engines, aur saath hi slow peripherals jaisay UART, SPI, I2C, Timers, aur GPIOs.
+    </p>
+    
+    <div class="callout callout-info">
+      <strong>Asal Problem Kya Hai? (The Engineering Dilemma)</strong>
+      CPU aur High-Speed Memories ko gigahertz (GHz) frequency aur bohot zyada throughput (Gigabytes per second) chahiye hota hai. Agar hum chhotay peripherals (UART/GPIO) ko bhi seedha high-speed AXI bus par laga dain, to do baray maslay paida hon gay:
+      <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+        <li><strong>Bus Congestion:</strong> Ek simple 1-byte UART transfer CPU ki high-speed AXI bus ko kai clock cycles tak block kar ke rakh dega.</li>
+        <li><strong>Power & Silicon Area Waste:</strong> AXI bus mein 5 alag alag channels aur 100+ wires hoti hain. Har chhotay sensor aur peripheral mein itni complex logic dalna battery aur silicon area ka zaya hai.</li>
+      </ol>
+    </div>
+
+    <p>
+      Is maslay ka standard ARM AMBA solution hai: <strong>Hierarchical Bus Architecture</strong>.
+    </p>
+
+    <!-- Visual Architecture Diagram (SVG) -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 900 240" xmlns="http://www.w3.org/2000/svg" style="font-family: inherit;">
+        <rect x="20" y="70" width="160" height="90" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="2"/>
+        <text x="100" y="110" font-weight="bold" fill="#1e3a8a" text-anchor="middle" font-size="15">CPU / DMA Master</text>
+        <text x="100" y="132" fill="#3b82f6" text-anchor="middle" font-size="12">(High Speed Host)</text>
+
+        <line x1="180" y1="115" x2="310" y2="115" stroke="#1e293b" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="245" y="100" fill="#475569" text-anchor="middle" font-weight="600" font-size="13">AXI4 Protocol</text>
+        <text x="245" y="135" fill="#64748b" text-anchor="middle" font-size="11">(5 Channels, Pipelined)</text>
+
+        <rect x="310" y="45" width="260" height="140" rx="12" fill="#fdf4ff" stroke="#a855f7" stroke-width="2"/>
+        <text x="440" y="85" font-weight="bold" fill="#6b21a8" text-anchor="middle" font-size="16">AXI2APB BRIDGE</text>
+        <text x="440" y="110" fill="#7e22ce" text-anchor="middle" font-size="12">Protocol Translator &amp; FSM</text>
+        <text x="440" y="130" fill="#9333ea" text-anchor="middle" font-size="11">Decoupling FIFOs + Slices</text>
+        <text x="440" y="155" font-weight="bold" fill="#c026d3" text-anchor="middle" font-size="12">[HAMARA DUT DESIGN]</text>
+
+        <line x1="570" y1="115" x2="700" y2="115" stroke="#1e293b" stroke-width="3"/>
+        <text x="635" y="100" fill="#475569" text-anchor="middle" font-weight="600" font-size="13">APB Protocol</text>
+        <text x="635" y="135" fill="#64748b" text-anchor="middle" font-size="11">(Low Power, Unpipelined)</text>
+
+        <rect x="700" y="30" width="180" height="50" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+        <text x="790" y="60" font-weight="bold" fill="#15803d" text-anchor="middle" font-size="13">UART Peripheral</text>
+
+        <rect x="700" y="95" width="180" height="50" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+        <text x="790" y="125" font-weight="bold" fill="#15803d" text-anchor="middle" font-size="13">SPI Controller</text>
+
+        <rect x="700" y="160" width="180" height="50" rx="8" fill="#f0fdf4" stroke="#22c55e" stroke-width="2"/>
+        <text x="790" y="190" font-weight="bold" fill="#15803d" text-anchor="middle" font-size="13">Timer / GPIO Registers</text>
+      </svg>
+    </div>
+
+    <p>
+      Hamara <strong>AXI2APB Bridge</strong> ek protocol converter hai:
+      Woh AXI4 master ki taraf se aane wali high-speed burst-capable transactions ko receive karta hai, unhein buffer karta hai, aur unhein synchronous, simple, low-power APB transfers mein convert kar ke slow peripherals ko provide karta hai. Jab peripheral response deta hai, to Bridge usay AXI4 protocol ke mutabiq package kar ke wapis master ko bhej deta hai.
+    </p>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section id="sec2" class="guide-section">
+    <h2 class="section-title">2. AMBA AXI4 Protocol Deep Dive (5 Channels & Handshakes)</h2>
+
+    <p>
+      <strong>AXI4 (Advanced eXtensible Interface)</strong> ARM AMBA family ka sab se powerful aur standard bus protocol hai. Iski sab se bari khoobi yeh hai ke is mein Read aur Write operations ke liye <strong>5 bilkul independent channels</strong> hotay hain. Har channel apne alag handshake par chalta hai.
+    </p>
+
+    <h3 class="sub-title">AXI4 Ke 5 Channels Ka Concept</h3>
+
+    <!-- Channel Cards -->
+    <div class="channel-card">
+      <div class="channel-header">
+        <strong style="color: #1e3a8a; font-size: 1.1rem;">1. Write Address Channel (AW - Address Write)</strong>
+        <span class="channel-tag">Master ➔ Slave</span>
+      </div>
+      <p style="font-size: 0.95rem; margin-bottom: 0.3rem;">
+        Master slave ko batata hai ke write transaction ka base address kya hai, kitnay transfers ki burst hai, aur access privileges kya hain.
+      </p>
+      <p style="font-size: 0.88rem; color: #475569;">
+        <strong>Key Signals:</strong> <code>AWADDR</code>, <code>AWID</code>, <code>AWLEN</code> (burst length), <code>AWSIZE</code> (bytes/beat), <code>AWBURST</code>, <code>AWUSER</code>, <code>AWVALID</code>, <code>AWREADY</code>.
+      </p>
+    </div>
+
+    <div class="channel-card">
+      <div class="channel-header">
+        <strong style="color: #1e3a8a; font-size: 1.1rem;">2. Write Data Channel (W - Write Data)</strong>
+        <span class="channel-tag">Master ➔ Slave</span>
+      </div>
+      <p style="font-size: 0.95rem; margin-bottom: 0.3rem;">
+        Master actual payload data bhejta hai. Har data beat ke sath byte-enables (strobe) hotay hain.
+      </p>
+      <p style="font-size: 0.88rem; color: #475569;">
+        <strong>Key Signals:</strong> <code>WDATA</code> (32/64-bit), <code>WSTRB</code> (byte enable mask), <code>WLAST</code> (aakhri beat ka indicator), <code>WUSER</code>, <code>WVALID</code>, <code>WREADY</code>.
+      </p>
+    </div>
+
+    <div class="channel-card">
+      <div class="channel-header">
+        <strong style="color: #065f46; font-size: 1.1rem;">3. Write Response Channel (B - Buffered Response)</strong>
+        <span class="channel-tag" style="background:#d1fae5; color:#065f46;">Slave ➔ Master</span>
+      </div>
+      <p style="font-size: 0.95rem; margin-bottom: 0.3rem;">
+        Poori write burst mukammal hone ke baad Slave Master ko acknowledge karta hai ke write kamiyab hua ya error aya.
+      </p>
+      <p style="font-size: 0.88rem; color: #475569;">
+        <strong>Key Signals:</strong> <code>BID</code>, <code>BRESP</code> (OKAY, SLVERR, DECERR), <code>BUSER</code>, <code>BVALID</code>, <code>BREADY</code>.
+      </p>
+    </div>
+
+    <div class="channel-card">
+      <div class="channel-header">
+        <strong style="color: #1e3a8a; font-size: 1.1rem;">4. Read Address Channel (AR - Address Read)</strong>
+        <span class="channel-tag">Master ➔ Slave</span>
+      </div>
+      <p style="font-size: 0.95rem; margin-bottom: 0.3rem;">
+        Master slave ko batata hai ke kis address se kitna data read karna hai.
+      </p>
+      <p style="font-size: 0.88rem; color: #475569;">
+        <strong>Key Signals:</strong> <code>ARADDR</code>, <code>ARID</code>, <code>ARLEN</code>, <code>ARSIZE</code>, <code>ARBURST</code>, <code>ARUSER</code>, <code>ARVALID</code>, <code>ARREADY</code>.
+      </p>
+    </div>
+
+    <div class="channel-card">
+      <div class="channel-header">
+        <strong style="color: #065f46; font-size: 1.1rem;">5. Read Data Channel (R - Read Data &amp; Response)</strong>
+        <span class="channel-tag" style="background:#d1fae5; color:#065f46;">Slave ➔ Master</span>
+      </div>
+      <p style="font-size: 0.95rem; margin-bottom: 0.3rem;">
+        Slave read kiya gaya data aur sath hi har beat ka response status master ko wapis send karta hai.
+      </p>
+      <p style="font-size: 0.88rem; color: #475569;">
+        <strong>Key Signals:</strong> <code>RID</code>, <code>RDATA</code>, <code>RRESP</code>, <code>RLAST</code>, <code>RUSER</code>, <code>RVALID</code>, <code>RREADY</code>.
+      </p>
+    </div>
+
+    <h3 class="sub-title">The Fundamental VALID / READY Handshake Rule</h3>
+    <p>
+      AXI ka har channel 2 signals par munhasir hota hai: <code>VALID</code> (Source generate karta hai) aur <code>READY</code> (Destination generate karta hai).
+    </p>
+    <div class="callout callout-warning">
+      <strong>Interview Golden Rule of AXI Handshake:</strong>
+      Data transfer sirf aur sirf tab hota hai jab <strong>ek hi positive clock edge par VALID == 1 aur READY == 1 dono ek sath active hon</strong>!
+      <ul>
+        <li>Source aik dafa <code>VALID</code> high kar de, to woh tab tak <code>VALID</code> low nahi kar sakta jab tak destination <code>READY</code> high kar ke handshake complete na kar le!</li>
+        <li>Destination ko ijazat hai ke woh <code>VALID</code> ka intezar kiye baghair pehle se <code>READY</code> high rakh sakti hai (Default Ready), ya phir <code>VALID</code> aane ke baad <code>READY</code> high kar sakti hai. Lekin Source kabhi bhi <code>VALID</code> assert karne ke liye <code>READY</code> ka intezar nahi kar sakta (No Deadlock rule).</li>
+      </ul>
+    </div>
+
+    <h3 class="sub-title">AXI Response Codes (<code>BRESP</code> / <code>RRESP</code>)</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Binary Value</th>
+          <th>Name</th>
+          <th>Matlab (Meaning)</th>
+          <th>Hamare Bridge Mein Support?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>2'b00</code></td>
+          <td><strong>OKAY</strong></td>
+          <td>Transfer bilkul kamiyab raha. Normal access success.</td>
+          <td><strong>Haan (Always returned)</strong></td>
+        </tr>
+        <tr>
+          <td><code>2'b01</code></td>
+          <td><strong>EXOKAY</strong></td>
+          <td>Exclusive Access kamiyab raha (Atomic operations).</td>
+          <td>Nahi (Not supported by simple APB)</td>
+        </tr>
+        <tr>
+          <td><code>2'b10</code></td>
+          <td><strong>SLVERR</strong></td>
+          <td>Slave Error (e.g. peripheral register parity error ya invalid write).</td>
+          <td>Bridge RTL hardcodes OKAY (Coverage ignore_bin)</td>
+        </tr>
+        <tr>
+          <td><code>2'b11</code></td>
+          <td><strong>DECERR</strong></td>
+          <td>Decode Error (Address par koi slave maujood hi nahi hai).</td>
+          <td>Bridge RTL hardcodes OKAY (Coverage ignore_bin)</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section id="sec3" class="guide-section">
+    <h2 class="section-title">3. AMBA APB Protocol Deep Dive (2-Phase Bus & Wait States)</h2>
+
+    <p>
+      <strong>APB (Advanced Peripheral Bus)</strong> ko specifically low-power, simple control registers ko drive karne ke liye design kiya gaya hai. Is mein AXI jaisi alag channels, bursts, ya out-of-order execution bilkul nahi hoti. Yeh aik single, synchronous, non-pipelined bus hai.
+    </p>
+
+    <h3 class="sub-title">APB Ke Core Signals</h3>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Signal Name</th>
+          <th>Direction (Bridge Perspective)</th>
+          <th>Width</th>
+          <th>Description &amp; Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>PCLK</code></td>
+          <td>Input / Clock</td>
+          <td>1 bit</td>
+          <td>APB Bus ka rising edge clock.</td>
+        </tr>
+        <tr>
+          <td><code>PRESETn</code></td>
+          <td>Input / Reset</td>
+          <td>1 bit</td>
+          <td>Active-low asynchronous/synchronous system reset.</td>
+        </tr>
+        <tr>
+          <td><code>PADDR</code></td>
+          <td>Output (to Slave)</td>
+          <td>32 bits</td>
+          <td>Peripheral ka register address.</td>
+        </tr>
+        <tr>
+          <td><code>PSEL</code></td>
+          <td>Output (to Slave)</td>
+          <td>1 bit</td>
+          <td>Peripheral select line. Jab yeh 1 ho to peripheral wake up hota hai.</td>
+        </tr>
+        <tr>
+          <td><code>PENABLE</code></td>
+          <td>Output (to Slave)</td>
+          <td>1 bit</td>
+          <td>Transfer ka access phase strobe. Yeh transfer ke second cycle mein 1 hota hai.</td>
+        </tr>
+        <tr>
+          <td><code>PWRITE</code></td>
+          <td>Output (to Slave)</td>
+          <td>1 bit</td>
+          <td><code>1'b1</code> = Write access, <code>1'b0</code> = Read access.</td>
+        </tr>
+        <tr>
+          <td><code>PWDATA</code></td>
+          <td>Output (to Slave)</td>
+          <td>32 bits</td>
+          <td>Peripheral ko write karne ke liye data.</td>
+        </tr>
+        <tr>
+          <td><code>PRDATA</code></td>
+          <td>Input (from Slave)</td>
+          <td>32 bits</td>
+          <td>Read operation ke waqt peripheral se wapis aane wala data.</td>
+        </tr>
+        <tr>
+          <td><code>PREADY</code></td>
+          <td>Input (from Slave)</td>
+          <td>1 bit</td>
+          <td><strong>Wait States Control:</strong> Agar slave slow hai to woh PREADY ko 0 rakh kar transfer extend karta hai.</td>
+        </tr>
+        <tr>
+          <td><code>PSLVERR</code></td>
+          <td>Input (from Slave)</td>
+          <td>1 bit</td>
+          <td>Slave error indicator (e.g., writing to read-only register).</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 class="sub-title">The APB 3-State Machine &amp; Timing Diagrams</h3>
+    <p>
+      Har standard APB transfer 2 ya us se zyada clock cycles leta hai:
+    </p>
+    <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
+      <li><strong>IDLE State:</strong> Bus free hai. <code>PSEL = 0</code>, <code>PENABLE = 0</code>.</li>
+      <li><strong>SETUP Phase (Cycle 1):</strong> Bridge peripheral ko select karta hai. <code>PSEL = 1</code>, <code>PENABLE = 0</code>. Address (<code>PADDR</code>) aur control (<code>PWRITE</code>) valid ho jatay hain.</li>
+      <li><strong>ACCESS Phase (Cycle 2+):</strong> Bridge <code>PENABLE = 1</code> assert karta hai.
+        <ul>
+          <li>Agar peripheral usi waqt tayyar hai (<code>PREADY = 1</code>), to transfer usi cycle ke aakhir par mukammal ho jata hai (Zero Wait States).</li>
+          <li>Agar peripheral ko waqt chahiye (<code>PREADY = 0</code>), to Bridge <code>PENABLE</code> aur <code>PSEL</code> ko pakar ke rakhta hai (Stall), aur multiple wait cycles add hotay hain.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <!-- APB Waveform Visualization -->
+    <div class="diagram-container">
+      <div style="font-weight: 700; color: #1e3a8a; margin-bottom: 0.5rem; text-align: left;">
+        APB Read Transfer with 1 Wait-State (PREADY Stalling)
+      </div>
+      <svg viewBox="0 0 850 200" xmlns="http://www.w3.org/2000/svg" style="font-family: monospace; font-size: 13px;">
+        <!-- Clock Grid Lines -->
+        <line x1="120" y1="20" x2="120" y2="185" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4"/>
+        <line x1="260" y1="20" x2="260" y2="185" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4"/>
+        <line x1="400" y1="20" x2="400" y2="185" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4"/>
+        <line x1="540" y1="20" x2="540" y2="185" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4"/>
+        <line x1="680" y1="20" x2="680" y2="185" stroke="#e2e8f0" stroke-width="1.5" stroke-dasharray="4"/>
+
+        <!-- Phase Labels -->
+        <text x="190" y="15" fill="#64748b" text-anchor="middle" font-weight="bold">T1 (SETUP)</text>
+        <text x="330" y="15" fill="#d97706" text-anchor="middle" font-weight="bold">T2 (ACCESS - WAIT)</text>
+        <text x="470" y="15" fill="#16a34a" text-anchor="middle" font-weight="bold">T3 (ACCESS - DONE)</text>
+        <text x="610" y="15" fill="#64748b" text-anchor="middle" font-weight="bold">T4 (IDLE)</text>
+
+        <!-- PCLK Signal -->
+        <text x="20" y="45" font-weight="bold" fill="#0f172a">PCLK</text>
+        <path d="M 100 50 L 120 50 L 120 30 L 190 30 L 190 50 L 260 50 L 260 30 L 330 30 L 330 50 L 400 50 L 400 30 L 470 30 L 470 50 L 540 50 L 540 30 L 610 30 L 610 50 L 680 50" fill="none" stroke="#2563eb" stroke-width="2"/>
+
+        <!-- PSEL Signal -->
+        <text x="20" y="80" font-weight="bold" fill="#0f172a">PSEL</text>
+        <path d="M 100 90 L 120 90 L 120 70 L 540 70 L 540 90 L 680 90" fill="none" stroke="#0d9488" stroke-width="2"/>
+
+        <!-- PENABLE Signal -->
+        <text x="20" y="115" font-weight="bold" fill="#0f172a">PENABLE</text>
+        <path d="M 100 125 L 260 125 L 260 105 L 540 105 L 540 125 L 680 125" fill="none" stroke="#9333ea" stroke-width="2"/>
+
+        <!-- PREADY Signal -->
+        <text x="20" y="150" font-weight="bold" fill="#0f172a">PREADY</text>
+        <path d="M 100 160 L 400 160 L 400 140 L 540 140 L 540 160 L 680 160" fill="none" stroke="#dc2626" stroke-width="2.5"/>
+
+        <!-- PRDATA Signal -->
+        <text x="20" y="180" font-weight="bold" fill="#0f172a">PRDATA</text>
+        <line x1="100" y1="180" x2="400" y2="180" stroke="#94a3b8" stroke-width="2"/>
+        <rect x="400" y="170" width="140" height="20" rx="3" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+        <text x="470" y="184" fill="#15803d" text-anchor="middle" font-weight="bold" font-size="11">0xFEED_FACE</text>
+        <line x1="540" y1="180" x2="680" y2="180" stroke="#94a3b8" stroke-width="2"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section id="sec4" class="guide-section">
+    <h2 class="section-title">4. AXI vs APB Comparison &amp; Bridging Challenges</h2>
+
+    <p>
+      Dono protocols ko barah-e-raast compare karna interviewers ka pasandeeda topic hota hai:
+    </p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>AXI4 Protocol (Master Side)</th>
+          <th>APB Protocol (Slave Side)</th>
+          <th>Bridge Ki Zimmedari (Translation Challenge)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Channel Structure</strong></td>
+          <td>5 Independent Asynchronous Channels</td>
+          <td>Single Unified Bus (Shared Address/Data)</td>
+          <td>Bridge ko channels ko serialize karna parta hai.</td>
+        </tr>
+        <tr>
+          <td><strong>Burst Capability</strong></td>
+          <td>Up to 256 beats per transaction</td>
+          <td>Single transfer only (No bursts)</td>
+          <td>Agar burst aaye to bridge ko break karna parta hai.</td>
+        </tr>
+        <tr>
+          <td><strong>Pipelining</strong></td>
+          <td>Fully Pipelined (Multiple outstanding addresses)</td>
+          <td>Non-pipelined (Phase strictly 2 cycles)</td>
+          <td>Bridge ko address buffer aur stall karna parta hai.</td>
+        </tr>
+        <tr>
+          <td><strong>Arbitration</strong></td>
+          <td>Concurrent Read &amp; Write requests mumkin hain</td>
+          <td>Ek waqt mein sirf Read YA Write ho sakta hai</td>
+          <td><strong>Priority Decision:</strong> Read ko Write par priority dena.</td>
+        </tr>
+        <tr>
+          <td><strong>Handshake</strong></td>
+          <td>VALID / READY two-way handshake</td>
+          <td>PSEL + PENABLE + PREADY</td>
+          <td>Protocol state transitions ko smoothly map karna.</td>
+        </tr>
+        <tr>
+          <td><strong>Performance / Power</strong></td>
+          <td>High Throughput, High Gate Count</td>
+          <td>Low Throughput, Minimal Power, Low Gate Count</td>
+          <td>Bridge high-speed bus ko slow bus se isolate rakhta hai.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section id="sec5" class="guide-section">
+    <h2 class="section-title">5. AXI2APB Bridge DUT Internal Architecture &amp; Decoupling FIFOs</h2>
+
+    <p>
+      Hamara Bridge RTL module (<code>rtl/axi2apb.sv</code>) aik generic, parameterizable bridge hai jo ETH Zurich aur University of Bologna ke mashhoor <em>PULP Platform</em> se liya gaya hai.
+    </p>
+
+    <h3 class="sub-title">Bridge Ke Andar Decoupling Buffers (Pipelining Slices)</h3>
+    <p>
+      AXI transactions high-frequency par travel karti hain. Agar bridge direct pins par logic laga de to timing closure fail ho sakti hai. Is liye RTL mein <strong>5 dedicated FIFO buffers</strong> use kiye gaye hain:
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+      <div style="background:#f1f5f9; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+        <strong style="color:#1e3a8a;">1. slave_aw_buffer_i</strong>
+        <p style="font-size:0.85rem; margin-top:0.3rem; color:#475569;">
+          Depth = 4. <code>AWADDR</code>, <code>AWID</code>, <code>AWUSER</code> etc. ko buffer karta hai.
+        </p>
+      </div>
+      <div style="background:#f1f5f9; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+        <strong style="color:#1e3a8a;">2. slave_ar_buffer_i</strong>
+        <p style="font-size:0.85rem; margin-top:0.3rem; color:#475569;">
+          Depth = 4. <code>ARADDR</code>, <code>ARID</code>, <code>ARUSER</code> ko hold karta hai.
+        </p>
+      </div>
+      <div style="background:#f1f5f9; padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+        <strong style="color:#1e3a8a;">3. slave_w_buffer_i</strong>
+        <p style="font-size:0.85rem; margin-top:0.3rem; color:#475569;">
+          Depth = 4. <code>WDATA</code>, <code>WSTRB</code>, <code>WUSER</code> ko buffer karta hai.
+        </p>
+      </div>
+      <div style="background:#f1f5f9; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+        <strong style="color:#065f46;">4. slave_r_buffer</strong>
+        <p style="font-size:0.85rem; margin-top:0.3rem; color:#475569;">
+          Depth = 4. APB se read data <code>PRDATA</code> ko AXI <code>RDATA_o</code> par bhejta hai.
+        </p>
+      </div>
+      <div style="background:#f1f5f9; padding: 1rem; border-radius: 8px; border-left: 4px solid #10b981;">
+        <strong style="color:#065f46;">5. slave_b_buffer</strong>
+        <p style="font-size:0.85rem; margin-top:0.3rem; color:#475569;">
+          Depth = 4. Write completion status (<code>BRESP</code>) ko buffer karta hai.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <strong>Kyun zaroori hain yeh buffers?</strong>
+      Yeh buffers AXI master ko foran <code>AWREADY</code> aur <code>WREADY</code> de kar free kar dete hain, jabke bridge peeche aahista aahista APB peripheral ko transfer complete karta rehta hai. Is process ko <em>Decoupling</em> ya <em>Latency Hiding</em> kehte hain.
+    </div>
+  </section>
+
+  <!-- SECTION 6 -->
+  <section id="sec6" class="guide-section">
+    <h2 class="section-title">6. Bridge Control FSM &amp; State Transitions Step-by-Step</h2>
+
+    <p>
+      RTL ke andar aik core <strong>Finite State Machine (FSM)</strong> hai jo poori translation ko control karti hai. Is FSM ki 5 states hain:
+    </p>
+
+    <!-- FSM Diagram (SVG) -->
+    <div class="diagram-container">
+      <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="font-family: inherit;">
+        <!-- IDLE State -->
+        <rect x="360" y="20" width="180" height="60" rx="10" fill="#eff6ff" stroke="#2563eb" stroke-width="2.5"/>
+        <text x="450" y="50" font-weight="bold" fill="#1e3a8a" text-anchor="middle" font-size="16">IDLE</text>
+        <text x="450" y="68" fill="#3b82f6" text-anchor="middle" font-size="11">Wait for AR or AW+W</text>
+
+        <!-- Left Branch: READ PATH -->
+        <line x1="360" y1="50" x2="160" y2="130" stroke="#0284c7" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="240" y="80" fill="#0369a1" font-weight="600" font-size="12">ARVALID &amp; !PREADY</text>
+
+        <rect x="70" y="130" width="180" height="60" rx="10" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+        <text x="160" y="160" font-weight="bold" fill="#0369a1" text-anchor="middle" font-size="15">WAIT_R_PREADY</text>
+        <text x="160" y="178" fill="#0284c7" text-anchor="middle" font-size="11">Stall until PREADY=1</text>
+
+        <line x1="160" y1="190" x2="260" y2="240" stroke="#0284c7" stroke-width="2"/>
+        <text x="180" y="225" fill="#0369a1" font-weight="600" font-size="12">PREADY==1</text>
+
+        <line x1="420" y1="80" x2="300" y2="240" stroke="#0284c7" stroke-width="2" stroke-dasharray="4"/>
+        <text x="330" y="150" fill="#0369a1" font-size="11">ARVALID &amp; PREADY=1</text>
+
+        <rect x="210" y="240" width="180" height="60" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+        <text x="300" y="270" font-weight="bold" fill="#065f46" text-anchor="middle" font-size="15">DONE_SINGLE_RD</text>
+        <text x="300" y="288" fill="#059669" text-anchor="middle" font-size="11">RVALID=1, wait RREADY</text>
+
+        <line x1="300" y1="240" x2="430" y2="80" stroke="#059669" stroke-width="2"/>
+        <text x="385" y="195" fill="#059669" font-weight="600" font-size="12">RREADY==1</text>
+
+        <!-- Right Branch: WRITE PATH -->
+        <line x1="540" y1="50" x2="740" y2="130" stroke="#d97706" stroke-width="2"/>
+        <text x="660" y="80" fill="#b45309" font-weight="600" font-size="12">AW &amp; W &amp; !PREADY</text>
+
+        <rect x="650" y="130" width="180" height="60" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+        <text x="740" y="160" font-weight="bold" fill="#b45309" text-anchor="middle" font-size="15">WAIT_W_PREADY</text>
+        <text x="740" y="178" fill="#d97706" text-anchor="middle" font-size="11">Stall until PREADY=1</text>
+
+        <line x1="740" y1="190" x2="640" y2="240" stroke="#d97706" stroke-width="2"/>
+        <text x="720" y="225" fill="#b45309" font-weight="600" font-size="12">PREADY==1</text>
+
+        <line x1="480" y1="80" x2="600" y2="240" stroke="#d97706" stroke-width="2" stroke-dasharray="4"/>
+        <text x="560" y="150" fill="#b45309" font-size="11">AW &amp; W &amp; PREADY=1</text>
+
+        <rect x="510" y="240" width="180" height="60" rx="10" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+        <text x="600" y="270" font-weight="bold" fill="#9d174d" text-anchor="middle" font-size="15">SEND_B_RESP</text>
+        <text x="600" y="288" fill="#be185d" text-anchor="middle" font-size="11">BVALID=1, wait BREADY</text>
+
+        <line x1="600" y1="240" x2="470" y2="80" stroke="#9d174d" stroke-width="2"/>
+        <text x="515" y="195" fill="#9d174d" font-weight="600" font-size="12">BREADY==1</text>
+      </svg>
+    </div>
+
+    <h3 class="sub-title">FSM Transitions Detail</h3>
+    <ol style="margin-left: 1.5rem; line-height: 1.9;">
+      <li>
+        <strong><code>IDLE</code> State:</strong>
+        <br>Bridge master ki taraf se request ka intezar karta hai.
+        <br><strong>Arbitration Rule:</strong> RTL mein <code>if (ARVALID) ... else if (AWVALID)</code> likha hai. Iska matlab agar Read aur Write request <em>ek hi waqt</em> par aa jayein to bridge <strong>Read ko pehle execute karega</strong> (Read Priority)!
+      </li>
+      <li>
+        <strong>Read Flow (<code>WAIT_R_PREADY</code> ➔ <code>DONE_SINGLE_RD</code>):</strong>
+        <br>Bridge APB par <code>read_req = 1</code> karta hai (jis se <code>PENABLE = 1</code> aur <code>PWRITE = 0</code> ho jata hai).
+        <br>Jab peripheral data ready karta hai (<code>PREADY == 1</code>), bridge <code>PRDATA</code> ko internal register <code>RDATA_Q</code> mein latch kar leta hai aur <code>DONE_SINGLE_RD</code> mein chala jata hai.
+        <br><code>DONE_SINGLE_RD</code> mein <code>RVALID = 1</code> aur <code>RLAST = 1</code> assert hota hai. Jab AXI Master <code>RREADY = 1</code> deta hai, to <code>ARREADY = 1</code> generate ho kar transfer complete ho jata hai aur FSM wapis <code>IDLE</code> aa jati hai.
+      </li>
+      <li>
+        <strong>Write Flow (<code>WAIT_W_PREADY</code> ➔ <code>SEND_B_RESP</code>):</strong>
+        <br>Bridge check karta hai ke kya dono Address (<code>AWVALID</code>) aur Data (<code>WVALID</code>) maujood hain. Agar haan, to <code>write_req = 1</code> hota hai (<code>PENABLE = 1</code>, <code>PWRITE = 1</code>, <code>PWDATA = WDATA</code>).
+        <br>Jab peripheral PREADY deta hai, FSM <code>SEND_B_RESP</code> state mein jati hai.
+        <br>Wahan <code>BVALID = 1</code> aur <code>BRESP = 2'b00 (OKAY)</code> assert hota hai. Jab Master <code>BREADY = 1</code> se acknowledge karta hai, to bridge FIFO ko pop karne ke liye <code>AWREADY = 1</code> aur <code>WREADY = 1</code> de kar <code>IDLE</code> mein wapis aa jata hai.
+      </li>
+    </ol>
+  </section>
+
+  <!-- SECTION 7 -->
+  <section id="sec7" class="guide-section">
+    <h2 class="section-title">7. Signal Mapping &amp; Pin Connectivity (Kaunsa Signal Kahan Jata Hai)</h2>
+
+    <p>
+      RTL lines 168-176 mein bridge ke internal signals ko APB bus ke sath seedha connect kiya gaya hai:
+    </p>
+
+    <pre><code>// RTL Code from rtl/axi2apb.sv
+assign PENABLE = write_req | read_req;
+assign PWRITE  = write_req;
+assign PADDR   = address[APB_ADDR_WIDTH-1:0];
+assign PWDATA  = WDATA;
+assign PSEL    = 1'b1; // Default selected when active</code></pre>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Source Signal (AXI Side)</th>
+          <th>Destination Signal (APB Side)</th>
+          <th>Transformation / Mapping Logic</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ARADDR[31:0]</code> / <code>AWADDR[31:0]</code></td>
+          <td><code>PADDR[31:0]</code></td>
+          <td>Direct 32-bit pass-through (muxed by FSM state).</td>
+        </tr>
+        <tr>
+          <td><code>WDATA[31:0]</code></td>
+          <td><code>PWDATA[31:0]</code></td>
+          <td>Direct data pass-through from AXI write FIFO to APB peripheral.</td>
+        </tr>
+        <tr>
+          <td><code>PRDATA[31:0]</code></td>
+          <td><code>RDATA_o[31:0]</code></td>
+          <td>Latched into <code>RDATA_Q</code> when <code>PREADY=1</code>, phir read buffer ke zariye master ko.</td>
+        </tr>
+        <tr>
+          <td><code>ARID[15:0]</code> / <code>AWID[15:0]</code></td>
+          <td><code>RID_o[15:0]</code> / <code>BID_o[15:0]</code></td>
+          <td>Loopback ID matching! AXI master jis ID ke sath request bhejta hai, response usi ID ke sath return hota hai.</td>
+        </tr>
+        <tr>
+          <td><code>ARUSER[9:0]</code> / <code>AWUSER[9:0]</code></td>
+          <td><code>RUSER_o[9:0]</code> / <code>BUSER_o[9:0]</code></td>
+          <td>User sideband signals ka direct loopback to ensure sideband metadata preserve rahay.</td>
+        </tr>
+        <tr>
+          <td><code>PREADY</code> (APB input)</td>
+          <td>FSM Transition Condition</td>
+          <td>FSM isi signal ka wait karti hai to move from <code>WAIT_*_PREADY</code> to Response state.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- SECTION 8 -->
+  <section id="sec8" class="guide-section">
+    <h2 class="section-title">8. Design Limitations &amp; Assumptions in this Project</h2>
+
+    <div class="callout callout-warning">
+      <strong>Verification Engineer Perspective (Very Important for Interviews!):</strong>
+      Ek achha verification engineer sirf RTL ko run nahi karta balki RTL ki boundaries aur design limitations ko samajhta hai:
+      <ol style="margin-left: 1.5rem; margin-top: 0.5rem; line-height: 1.8;">
+        <li>
+          <strong>No Multi-beat Burst Support (Single Transfer Only):</strong>
+          <br>RTL mein burst handling logic (address incrementer) nahi hai. Is liye stimulus mein <code>AWLEN == 0</code> aur <code>ARLEN == 0</code> constrain kiya jata hai (1 beat transfer).
+        </li>
+        <li>
+          <strong>Fixed OKAY Response (Hardcoded <code>2'b00</code>):</strong>
+          <br>RTL lines 344 aur 352 mein <code>BRESP = `OKAY</code> aur <code>RRESP = `OKAY</code> hardcoded hain. Hatta ke agar APB slave <code>PSLVERR = 1</code> bhi de, to yeh bridge usay capture nahi karta balki hamesha OKAY deta hai. Is liye hamare UVM functional coverage mein <code>SLVERR</code> aur <code>DECERR</code> ko <code>ignore_bins</code> banaya gaya taake coverage 100% achieve ho sakay.
+        </li>
+        <li>
+          <strong>Address Alignment:</strong>
+          <br>Kyunke APB 32-bit (4 bytes) transfer karta hai, is liye addresses hamesha 4-byte aligned (<code>addr[1:0] == 2'b00</code>) honay chahiye hain.
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- SECTION 9 -->
+  <section id="sec9" class="guide-section">
+    <h2 class="section-title">9. Top 10 Core Theory &amp; Design Interview Questions (Roman Urdu)</h2>
+
+    <!-- Q1 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q1: AXI aur APB mein sab se barra fundamental farq kya hai? Hum APB kyun use kartay hain?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        AXI ek high-throughput, high-frequency, 5-channel pipelined bus hai jo complex multi-master bursts aur out-of-order execution support karti hai. Iska interface bohot wide aur complex hota hai.
+        <br>Dusri taraf APB ek simple, 2-phase, non-pipelined, low-frequency bus hai jiska main maqsad <em>power consumption aur silicon area kam karna</em> hai. Slow peripherals jaisay UART aur Timers ko AXI ki complexity ki zaroorat nahi hoti, is liye SoC mein unhein APB par rakha jata hai aur darmiyan mein AXI2APB Bridge lagaya jata hai.
+        <div class="answer-highlight">
+          <strong>Key Interview Punchline:</strong> "AXI is optimized for high bandwidth and pipelining; APB is optimized for low power, minimal wire count, and simplicity."
+        </div>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q2: AXI handshake mein VALID aur READY ke darmiyan kya dependencies allow hain aur kya mana hain?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        AXI standard ke mutabiq:
+        <ul style="margin-left: 1.5rem; margin-top: 0.3rem;">
+          <li><code>VALID</code> ko assert karne ke liye <code>READY</code> ka intezar karna <strong>strictly prohibited</strong> hai! Agar Source READY ka intezar karega aur Destination VALID ka intezar karegi, to system deadlock ho jayega.</li>
+          <li>Lekin <code>READY</code> assert karne ke liye Destination <code>VALID</code> ka intezar <em>kar sakti hai</em>, ya chahe to pehle se default-READY high rakh sakti hai.</li>
+          <li>Aik dafa <code>VALID</code> high ho gaya, to jab tak handshake mukammal na ho, Source <code>VALID</code> ko drop nahi kar sakta aur data change nahi kar sakta.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q3: APB protocol mein Wait States kis tarah insert hoti hain?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        APB protocol ke <em>Access phase</em> mein (jab <code>PENABLE = 1</code> hota hai), Bridge slave ke signal <code>PREADY</code> ko monitor karta hai:
+        <ul style="margin-left: 1.5rem; margin-top: 0.3rem;">
+          <li>Agar <code>PREADY == 1</code> ho, to transfer usi cycle ke aakhir par complete ho jata hai (Zero wait states).</li>
+          <li>Agar peripheral abhi data lene ya dene ke liye tayyar na ho, to woh <code>PREADY = 0</code> rakhta hai. Is doran Bridge <code>PSEL</code>, <code>PENABLE</code>, aur <code>PADDR</code> ko unchange rakhta hai. Jitnay cycles tak <code>PREADY == 0</code> rahay ga, utnay wait states count hotay hain.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q4: Agar AXI Master ek hi clock cycle par Read (ARVALID) aur Write (AWVALID) dono requests bhej de, to yeh Bridge kya karega?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        Hamare bridge RTL ke <code>IDLE</code> state mein Read ko priority di gayi hai:
+        <pre><code>if (ARVALID == 1'b1) begin
+    // Service Read Request first
+end else if (AWVALID) begin
+    // Service Write Request
+end</code></pre>
+        Chunkay APB bus par ek waqt mein ya to read ho sakta hai ya write, is liye bridge pehle <strong>Read transaction ko APB par complete karega</strong>. Jab tak Read complete ho kar AXI par <code>RVALID/RREADY</code> handshake na ho jaye, Write request input FIFO mein buffered rahay gi aur Read ke baad execute hogi.
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q5: AXI mein <code>AWID</code>, <code>ARID</code>, <code>BID</code>, aur <code>RID</code> ka kya maqsad hota hai? Hamara bridge inhein kaisay handle karta hai?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        Transaction IDs AXI protocol ko <em>Out-of-Order Completion</em> aur multiple outstanding transactions track karne ki ijazat dete hain. Master har request ke sath ek ID bhejta hai.
+        <br>Hamara bridge un-pipelined APB slave ko drive kar raha hai, is liye yeh out-of-order execution nahi karta, balki yeh <strong>ID Loopback</strong> karta hai:
+        Jo ID <code>AWID</code> par aayi thi, wahi ID <code>BID</code> par wapis di jati hai; aur jo ID <code>ARID</code> par aayi thi, wahi ID <code>RID</code> par return ki jati hai. Is se AXI Master ko confirmation milti hai ke kis transaction ka response aya hai.
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q6: Bridge ke andar decoupling FIFOs (buffers) laganay ka kya faida hota hai?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        Agar buffers na hon to:
+        <ol style="margin-left: 1.5rem; margin-top: 0.3rem;">
+          <li><strong>Timing Critical Path:</strong> AXI bus ki timing direct slow APB bus par depend karegi jis se maximum operating frequency drop ho jayegi.</li>
+          <li><strong>Master Stalling:</strong> Master ko har single write ke waqt tab tak ruka rehna paray ga jab tak APB slave access phase mukammal na kare. Buffers lagane se master write request submit kar ke foran free ho jata hai (latency hiding).</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q7: AXI4 ke response types kaun se hain, aur is project mein RTL response kaisay behave karta hai?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        AXI4 mein 4 response types hain:
+        <code>OKAY (2'b00)</code>, <code>EXOKAY (2'b01)</code>, <code>SLVERR (2'b10)</code>, aur <code>DECERR (2'b11)</code>.
+        <br>Hamare project ke DUT RTL mein <code>BRESP</code> aur <code>RRESP</code> hamesha <code>2'b00 (OKAY)</code> hardcoded hain. Yeh ek design limitation hai jo Verification Engineer ko pata honi chahiye taake verification plan mein unrealizable response bins ko ignore kiya ja sakay.
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q8: APB mein <code>PWRITE = 1</code> ke doran <code>PRDATA</code> ka kya role hota hai?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        Jab <code>PWRITE = 1</code> (Write access) hota hai, to peripheral <code>PWDATA</code> ko sample karta hai. Is doran <code>PRDATA</code> bus par jo marzi value ho, woh 'don't care' (invalid) hoti hai aur bridge usay sample nahi karta.
+      </div>
+    </div>
+
+    <!-- Q9 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q9: APB3 aur APB4 mein kya farq hai?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        APB2 sab se basic tha. APB3 mein do zaroori signals add kiye gaye: <code>PREADY</code> (wait states stall karne ke liye) aur <code>PSLVERR</code> (slave error feedback ke liye).
+        <br>APB4 mein do mazeed features add kiye gaye: <code>PPROT</code> (protection levels: secure/privileged) aur <code>PSTRB</code> (byte-level write strobes). Hamara project APB3/APB4 compliant hai kyunke is mein <code>PREADY</code> aur <code>PSLVERR</code> dono handle hotay hain.
+      </div>
+    </div>
+
+    <!-- Q10 -->
+    <div class="interview-q">
+      <div class="question-header">
+        <span>Q10: Agar APB slave <code>PREADY</code> ko hamesha 0 rakhay (stuck-at-0), to Bridge par kya asar parray ga?</span>
+      </div>
+      <div class="question-body">
+        <strong>Jawab (Roman Urdu):</strong>
+        Agar slave <code>PREADY = 0</code> par permanently phans jaye, to Bridge ki FSM <code>WAIT_R_PREADY</code> ya <code>WAIT_W_PREADY</code> state mein <strong>deadlock</strong> ho jayegi! Bridge kabhi AXI master ko response nahi bhej paye ga, jis ki wajah se master ka bus cycle hang ho jayega.
+        <br>Real-world SoCs mein is maslay se bachnay ke liye bridge ke andar aik <em>Bus Watchdog / Timeout Counter</em> lagaya jata hai jo specific clock cycles ke baad access abort kar ke AXI master ko <code>SLVERR</code> return kar deta hai.
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Navigation to Part 2 -->
+  <div style="background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); color: #ffffff; padding: 2rem; border-radius: 12px; text-align: center; margin-top: 2rem;">
+    <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Ready for Part 2: UVM Architecture, Scoreboard &amp; All Test Cases?</h3>
+    <p style="font-size: 1.05rem; opacity: 0.95; max-width: 800px; margin: 0 auto 1.25rem auto;">
+      Part 1 mein hum ne complete protocol theory, FSM, internal FIFOs, aur core concepts samajh liye hain. Part 2 mein hum UVM Testbench Architecture, 2 Agents (Master &amp; Reactive Slave), Scoreboard, Functional Coverage, aur har ek Directed &amp; Randomized Testcase ko line-by-line cover karein gay!
+    </p>
+    <span class="badge badge-light" style="font-size: 0.95rem; padding: 0.5rem 1.2rem;">File Created: docs/AXI2APB_Master_Guide_Part1_Theory_and_DUT.html</span>
+  </div>
+
+  <footer>
+    <p>AXI4 to APB Bridge Verification Project &copy; 2026 | Prepared for Design Verification Engineer Technical Interviews</p>
+  </footer>
+
+</div>
+
+</body>
+</html>

@@ -24,6 +24,7 @@ class axi2apb_smoke_test extends axi2apb_base_test;
   virtual task run_phase(uvm_phase phase);
     int unsigned pre_reset_cycles = 0;
     int unsigned post_reset_cycles = 0;
+    int unsigned smoke_errors = 0;
 
     phase.raise_objection(this, "Starting axi2apb_smoke_test");
 
@@ -46,6 +47,7 @@ class axi2apb_smoke_test extends axi2apb_base_test;
       #100ns;
     end
 
+   
     // Observe 20 clock cycles post-reset to verify stable idle behavior
     `uvm_info(get_type_name(), "Step 3: Checking stable IDLE post-reset behavior for 20 clock cycles...", UVM_LOW)
     repeat (20) begin
@@ -56,21 +58,27 @@ class axi2apb_smoke_test extends axi2apb_base_test;
       if (apb_vif != null) begin
         if (apb_vif.penable === 1'b1) begin
           `uvm_error("SMOKE_ERR", "Spurious PENABLE assertion observed on APB during reset recovery!")
+          smoke_errors++;
         end
       end
 
       if (axi_vif != null) begin
         if (axi_vif.bvalid === 1'b1 || axi_vif.rvalid === 1'b1) begin
           `uvm_error("SMOKE_ERR", "Spurious BVALID or RVALID asserted on AXI post-reset!")
+          smoke_errors++;
         end
       end
       post_reset_cycles++;
     end
 
-    `uvm_info(get_type_name(), $sformatf("Step 4: DUT successfully held IDLE without spurious activity for %0d cycles.", post_reset_cycles), UVM_LOW)
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
-    `uvm_info(get_type_name(), "          TEST 1: RESET AND SMOKE TEST PASSED                   ", UVM_LOW)
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
+    if (smoke_errors == 0) begin
+      `uvm_info(get_type_name(), $sformatf("Step 4: DUT successfully held IDLE without spurious activity for %0d cycles.", post_reset_cycles), UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
+      `uvm_info(get_type_name(), "          TEST 1: RESET AND SMOKE TEST PASSED                   ", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
+    end else begin
+      `uvm_error(get_type_name(), $sformatf("Smoke test FAILED: %0d spurious assertions observed during IDLE.", smoke_errors))
+    end
 
     phase.drop_objection(this, "Ending axi2apb_smoke_test");
   endtask : run_phase

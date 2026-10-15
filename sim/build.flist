@@ -21,6 +21,8 @@
 +incdir+../tb
 +incdir+../tb/axi_master_agent
 +incdir+../tb/apb_slave_agent
++incdir+../tb/sequences
++incdir+../tb/coverage
 +incdir+../tb/environment
 +incdir+../tb/tests
 

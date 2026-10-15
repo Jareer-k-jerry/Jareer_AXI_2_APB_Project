@@ -35,20 +35,31 @@ class apb_slave_monitor extends uvm_monitor;
     @(vif.monitor_cb);
 
     forever begin
-      // Sample at the completion edge when PSEL, PENABLE, and PREADY are all high
+      int unsigned measured_waits;
+      measured_waits = 0;
+
+      // Wait until an APB transfer is initiated: PSEL && PENABLE active
       do begin
         @(vif.monitor_cb);
-      end while (!(vif.monitor_cb.psel && vif.monitor_cb.penable && vif.monitor_cb.pready));
+      end while (!(vif.monitor_cb.psel && vif.monitor_cb.penable));
 
+      // Measure wait states: while transfer is active but PREADY is low
+      while (!vif.monitor_cb.pready) begin
+        measured_waits++;
+        @(vif.monitor_cb);
+      end
+
+      // PREADY is now high — this is the completion edge
       begin
         apb_slave_item tr;
         tr = apb_slave_item::type_id::create("monitored_apb_transfer");
 
-        tr.addr       = vif.monitor_cb.paddr;
-        tr.write      = vif.monitor_cb.pwrite;
-        tr.write_data = vif.monitor_cb.pwdata;
-        tr.read_data  = vif.monitor_cb.prdata;
-        tr.pslverr    = vif.monitor_cb.pslverr;
+        tr.addr        = vif.monitor_cb.paddr;
+        tr.write       = vif.monitor_cb.pwrite;
+        tr.write_data  = vif.monitor_cb.pwdata;
+        tr.read_data   = vif.monitor_cb.prdata;
+        tr.pslverr     = vif.monitor_cb.pslverr;
+        tr.wait_cycles = measured_waits;
 
         `uvm_info(get_type_name(), $sformatf("Observed Complete APB Transfer: %s", tr.convert2string()), UVM_MEDIUM)
         analysis_port.write(tr);

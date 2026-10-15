@@ -56,8 +56,9 @@ class axi2apb_simultaneous_rw_test extends axi2apb_base_test;
     `uvm_info(get_type_name(), "  Expected: DUT services READ first (read-priority arbitration). ", UVM_LOW)
     `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
 
-    // Wait for reset to be fully released
-    #100ns;
+    // Wait for reset to be fully released explicitly
+    wait (axi_vif != null && axi_vif.ARESETn === 1'b1);
+    #20ns;
 
     // -------------------------------------------------------------------------
     // Fork three concurrent threads:
@@ -77,27 +78,84 @@ class axi2apb_simultaneous_rw_test extends axi2apb_base_test;
         apb_rsp_seq.start(apb_agent.sequencer);
       end
 
-      // --- Thread 1: AXI Read (high-priority channel) -----------------------
+      // --- Thread 1: Pin-level simultaneous assertion of AR and AW channels ---
+      // Drives ARVALID, AWVALID, and WVALID at the EXACT SAME clock edge from IDLE state.
+      // All 5 AXI channels are handled in parallel so that AW and W valid signals
+      // deassert immediately upon handshake and do not stay asserted or cause timeouts.
       begin
-        axi_rd_seq = axi_single_read_seq::type_id::create("axi_rd_seq");
-        axi_rd_seq.target_addr = READ_ADDR;
-        axi_rd_seq.trans_id    = 16'h00E1;
-        axi_rd_seq.user_val    = 10'h0E1;
-        axi_rd_seq.start(axi_agent.sequencer);
+        @(axi_vif.master_cb);
+        // Assert Read Address Channel
+        axi_vif.master_cb.arid    <= 16'h00E1;
+        axi_vif.master_cb.araddr  <= READ_ADDR;
+        axi_vif.master_cb.arlen   <= 8'd0;
+        axi_vif.master_cb.arsize  <= 3'd2;
+        axi_vif.master_cb.arburst <= 2'b01;
+        axi_vif.master_cb.aruser  <= 10'h0E1;
+        axi_vif.master_cb.arvalid <= 1'b1;
+
+        // Assert Write Address & Data Channels at the EXACT same clock edge
+        axi_vif.master_cb.awid    <= 16'h00E2;
+        axi_vif.master_cb.awaddr  <= WRITE_ADDR;
+        axi_vif.master_cb.awlen   <= 8'd0;
+        axi_vif.master_cb.awsize  <= 3'd2;
+        axi_vif.master_cb.awburst <= 2'b01;
+        axi_vif.master_cb.awuser  <= 10'h0E2;
+        axi_vif.master_cb.awvalid <= 1'b1;
+
+        axi_vif.master_cb.wdata   <= WRITE_DATA;
+        axi_vif.master_cb.wstrb   <= 4'hF;
+        axi_vif.master_cb.wlast   <= 1'b1;
+        axi_vif.master_cb.wuser   <= 10'h0E2;
+        axi_vif.master_cb.wvalid  <= 1'b1;
+
+        axi_vif.master_cb.rready  <= 1'b1;
+        axi_vif.master_cb.bready  <= 1'b1;
+
+        // Complete handshakes across all 5 channels concurrently
+        fork
+          // AR handshake: deassert arvalid immediately when arready is sampled
+          begin
+            do begin
+              @(axi_vif.master_cb);
+            end while (axi_vif.master_cb.arready !== 1'b1);
+            axi_vif.master_cb.arvalid <= 1'b0;
+          end
+
+          // AW handshake: deassert awvalid immediately when awready is sampled
+          begin
+            do begin
+              @(axi_vif.master_cb);
+            end while (axi_vif.master_cb.awready !== 1'b1);
+            axi_vif.master_cb.awvalid <= 1'b0;
+          end
+
+          // W handshake: deassert wvalid immediately when wready is sampled
+          begin
+            do begin
+              @(axi_vif.master_cb);
+            end while (axi_vif.master_cb.wready !== 1'b1);
+            axi_vif.master_cb.wvalid <= 1'b0;
+          end
+
+          // R handshake: deassert rready when read data response completes
+          begin
+            do begin
+              @(axi_vif.master_cb);
+            end while (axi_vif.master_cb.rvalid !== 1'b1);
+            axi_vif.master_cb.rready <= 1'b0;
+          end
+
+          // B handshake: deassert bready when write response completes
+          begin
+            do begin
+              @(axi_vif.master_cb);
+            end while (axi_vif.master_cb.bvalid !== 1'b1);
+            axi_vif.master_cb.bready <= 1'b0;
+          end
+        join
       end
 
-      // --- Thread 2: AXI Write (lower-priority; starts same simulation delta)
-      begin
-        axi_wr_seq = axi_single_write_seq::type_id::create("axi_wr_seq");
-        axi_wr_seq.target_addr  = WRITE_ADDR;
-        axi_wr_seq.write_data   = WRITE_DATA;
-        axi_wr_seq.trans_id     = 16'h00E2;
-        axi_wr_seq.user_val     = 10'h0E2;
-        axi_wr_seq.bready_delay = 0;
-        axi_wr_seq.start(axi_agent.sequencer);
-      end
-
-    join  // wait for all three threads (both AXI transactions + APB reactive)
+    join  // wait for pin-level stimulus and APB reactive slave
 
     // Allow time for monitors to observe the final APB access phase and for
     // the scoreboard to drain both queue entries.
@@ -117,11 +175,10 @@ class axi2apb_simultaneous_rw_test extends axi2apb_base_test;
     end else begin
       `uvm_info(get_type_name(),
         "Both read (priority-serviced first) and write transactions verified by scoreboard.", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
+      `uvm_info(get_type_name(), "   TEST 5: SIMULTANEOUS READ/WRITE PRIORITY TEST PASSED           ", UVM_LOW)
+      `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
     end
-
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
-    `uvm_info(get_type_name(), "   TEST 5: SIMULTANEOUS READ/WRITE PRIORITY TEST PASSED           ", UVM_LOW)
-    `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
 
     phase.drop_objection(this, "Ending axi2apb_simultaneous_rw_test");
   endtask : run_phase
