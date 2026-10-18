@@ -19,12 +19,13 @@
 # UVM include directories
 # -----------------------------
 +incdir+../tb
-+incdir+../tb/axi_master_agent
-+incdir+../tb/apb_slave_agent
-+incdir+../tb/sequences
-+incdir+../tb/coverage
-+incdir+../tb/environment
-+incdir+../tb/tests
++incdir+../tb/uvm
++incdir+../tb/uvm/agents/axi_master_agent
++incdir+../tb/uvm/agents/apb_slave_agent
++incdir+../tb/uvm/sequences
++incdir+../tb/uvm/coverage
++incdir+../tb/uvm/env
++incdir+../tb/uvm/tests
 
 # -----------------------------
 # Testbench compile order

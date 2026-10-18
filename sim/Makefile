@@ -13,7 +13,7 @@ SHELL := /bin/bash
 
 compile:
 	@mkdir -p ./out
-	vcs -sverilog -timescale=1ns/1ps -override_timescale -f build.flist -ntb_opts uvm-1.2 -cm line+tgl+cond -full64 -debug_all +UVM_TESTNAME=$(TEST)
+	vcs -sverilog -timescale=1ns/1ps -override_timescale -f build.flist -ntb_opts uvm-1.2 -cm line+tgl+cond+fsm -full64 -debug_all +UVM_TESTNAME=$(TEST)
 	@rm -rf ./out/build_$(TEST)
 	@mkdir -p ./out/build_$(TEST)
 	@for item in csrc simv.daidir simv.vdb simv vc_hdrs.h ucli.key; do \
@@ -41,7 +41,7 @@ endif
 
 sim:
 	@test -f ./out/build_$(TEST)/simv || (echo "ERROR: Test executable ./out/build_$(TEST)/simv does not exist. Run 'make compile TEST=$(TEST)' first." && exit 1)
-	cd ./out/build_$(TEST) && ./simv -cm line+tgl+cond -cm_name $(TEST) +UVM_TESTNAME=$(TEST) $(RUN_ARGS) | tee build_$(TEST).log
+	cd ./out/build_$(TEST) && ./simv -cm line+tgl+cond+fsm -cm_name $(TEST) +UVM_TESTNAME=$(TEST) $(RUN_ARGS) | tee build_$(TEST).log
 	@if [ -d "./out/build_$(TEST)/simv.vdb" ]; then \
 		echo ">>> Generating URG Coverage HTML Report for $(TEST) ..."; \
 		(cd ./out/build_$(TEST) && urg -dir simv.vdb -report urgReport) && \
@@ -125,6 +125,21 @@ func_covg:
 
 coverage: code_covg func_covg
 
+# ============================================================
+# MERGE COVERAGE ACROSS ALL EXECUTED TESTS
+# Usage:
+# make merge
+# ============================================================
+
+merge:
+	@echo ">>> Merging coverage from all executed tests into urgReport ... <<<"
+	@test -d ./out && ls -d ./out/build_*/*.vdb >/dev/null 2>&1 || (echo "ERROR: No test databases (*.vdb) found in ./out/! Run at least one test first." && exit 1)
+	urg -dir ./out/build_*/*.vdb -report urgReport
+	@echo "============================================================"
+	@echo "Cumulative Coverage Report merged successfully in urgReport/!"
+	@echo "  Open in browser: ./urgReport/dashboard.html"
+	@echo "============================================================"
+
 
 # ============================================================
 # OPEN CODE COVERAGE REPORT
@@ -165,13 +180,27 @@ DIRECTED_TESTS = axi2apb_smoke_test \
                  axi2apb_single_write_test \
                  axi2apb_single_read_test \
                  axi2apb_wait_state_test \
-                 axi2apb_simultaneous_rw_test
+                 axi2apb_rready_delay_test \
+                 axi2apb_bready_delay_test \
+                 axi2apb_simultaneous_rw_test \
+                 axi2apb_b2b_reads_test \
+                 axi2apb_b2b_writes_test \
+                 axi2apb_mixed_traffic_test \
+                 axi2apb_diff_ids_users_test \
+                 axi2apb_pslverr_test
 
 RANDOM_TESTS   = axi2apb_random_smoke_test \
                  axi2apb_random_single_write_test \
                  axi2apb_random_single_read_test \
                  axi2apb_random_wait_state_test \
                  axi2apb_random_simultaneous_rw_test \
+                 axi2apb_random_rready_delay_test \
+                 axi2apb_random_bready_delay_test \
+                 axi2apb_random_b2b_reads_test \
+                 axi2apb_random_b2b_writes_test \
+                 axi2apb_random_mixed_traffic_test \
+                 axi2apb_random_diff_ids_users_test \
+                 axi2apb_random_pslverr_test \
                  axi2apb_constrained_random_test
 
 regression_directed:
@@ -179,6 +208,7 @@ regression_directed:
 		echo ">>> Running Directed Test: $$t <<<"; \
 		$(MAKE) run TEST=$$t || exit 1; \
 	done
+	$(MAKE) merge
 	$(MAKE) coverage
 
 regression_random:
@@ -186,6 +216,7 @@ regression_random:
 		echo ">>> Running Randomized Test: $$t <<<"; \
 		$(MAKE) run TEST=$$t || exit 1; \
 	done
+	$(MAKE) merge
 	$(MAKE) coverage
 
 regression_all:
@@ -193,9 +224,10 @@ regression_all:
 		echo ">>> Running Test: $$t <<<"; \
 		$(MAKE) run TEST=$$t || exit 1; \
 	done
+	$(MAKE) merge
 	$(MAKE) coverage
 
 
-.PHONY: compile sim run gui code_covg func_covg coverage \
+.PHONY: compile sim run gui code_covg func_covg coverage merge \
         code_covg_gui func_covg_gui clean clean_all clean_covg \
         regression_directed regression_random regression_all

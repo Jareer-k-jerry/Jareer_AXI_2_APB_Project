@@ -15,6 +15,7 @@ class axi2apb_env extends uvm_env;
   apb_slave_agent             apb_agent;
   axi2apb_scoreboard          scoreboard;
   axi2apb_functional_coverage coverage;
+  axi2apb_virtual_sequencer   v_sequencer;
 
   function new(string name = "axi2apb_env", uvm_component parent = null);
     super.new(name, parent);
@@ -24,10 +25,11 @@ class axi2apb_env extends uvm_env;
     super.build_phase(phase);
     `uvm_info(get_type_name(), "build_phase: constructing verification environment components", UVM_HIGH)
 
-    axi_agent  = axi_master_agent::type_id::create("axi_agent", this);
-    apb_agent  = apb_slave_agent::type_id::create("apb_agent", this);
-    scoreboard = axi2apb_scoreboard::type_id::create("scoreboard", this);
-    coverage   = axi2apb_functional_coverage::type_id::create("coverage", this);
+    axi_agent   = axi_master_agent::type_id::create("axi_agent", this);
+    apb_agent   = apb_slave_agent::type_id::create("apb_agent", this);
+    scoreboard  = axi2apb_scoreboard::type_id::create("scoreboard", this);
+    coverage    = axi2apb_functional_coverage::type_id::create("coverage", this);
+    v_sequencer = axi2apb_virtual_sequencer::type_id::create("v_sequencer", this);
   endfunction : build_phase
 
   virtual function void connect_phase(uvm_phase phase);
@@ -41,6 +43,10 @@ class axi2apb_env extends uvm_env;
     // Connect AXI and APB agent analysis ports to coverage exports
     axi_agent.analysis_port.connect(coverage.axi_cov_export);
     apb_agent.analysis_port.connect(coverage.apb_cov_export);
+
+    // Connect virtual sequencer handles to physical agent sequencers
+    v_sequencer.axi_seqr = axi_agent.sequencer;
+    v_sequencer.apb_seqr = apb_agent.sequencer;
   endfunction : connect_phase
 
 endclass : axi2apb_env

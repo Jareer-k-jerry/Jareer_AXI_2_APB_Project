@@ -29,13 +29,7 @@ class axi2apb_b2b_writes_test extends axi2apb_base_test;
   endfunction : new
 
   virtual task run_phase(uvm_phase phase);
-    apb_slave_reactive_seq apb_rsp_seq;
-    axi_single_write_seq   axi_wr_seq;
-
-    bit [31:0] test_addrs [NUM_B2B_WRITES] = '{32'h0000_2000, 32'h0000_2004, 32'h0000_2008, 32'h0000_200C};
-    bit [31:0] test_data  [NUM_B2B_WRITES] = '{32'hCAFE_0001, 32'hCAFE_0002, 32'hCAFE_0003, 32'hCAFE_0004};
-    bit [15:0] test_ids   [NUM_B2B_WRITES] = '{16'h0021,      16'h0022,      16'h0023,      16'h0024};
-    bit [9:0]  test_users [NUM_B2B_WRITES] = '{10'h021,       10'h022,       10'h023,       10'h024};
+    axi2apb_b2b_writes_vseq vseq;
 
     phase.raise_objection(this, "Starting axi2apb_b2b_writes_test");
 
@@ -47,29 +41,11 @@ class axi2apb_b2b_writes_test extends axi2apb_base_test;
     wait (axi_vif != null && axi_vif.ARESETn === 1'b1);
     #20ns;
 
-    fork
-      // Reactive APB slave thread handling all 4 consecutive writes
-      begin
-        apb_rsp_seq = apb_slave_reactive_seq::type_id::create("apb_b2b_wr_rsp_seq");
-        apb_rsp_seq.num_trans    = NUM_B2B_WRITES;
-        apb_rsp_seq.wait_cycles  = 0;
-        apb_rsp_seq.inject_error = 1'b0;
-        apb_rsp_seq.start(apb_agent.sequencer);
-      end
-
-      // AXI Master thread issuing 4 consecutive back-to-back writes
-      begin
-        for (int i = 0; i < NUM_B2B_WRITES; i++) begin
-          axi_wr_seq = axi_single_write_seq::type_id::create($sformatf("b2b_wr_seq_%0d", i));
-          axi_wr_seq.target_addr  = test_addrs[i];
-          axi_wr_seq.write_data   = test_data[i];
-          axi_wr_seq.trans_id     = test_ids[i];
-          axi_wr_seq.user_val     = test_users[i];
-          axi_wr_seq.bready_delay = 0;
-          axi_wr_seq.start(axi_agent.sequencer);
-        end
-      end
-    join
+    // Execute Virtual Sequence on Virtual Sequencer
+    `uvm_info(get_type_name(), "Executing axi2apb_b2b_writes_vseq on Virtual Sequencer...", UVM_LOW)
+    vseq = axi2apb_b2b_writes_vseq::type_id::create("vseq");
+    vseq.num_writes = NUM_B2B_WRITES;
+    vseq.start(env.v_sequencer);
 
     #60ns;
 

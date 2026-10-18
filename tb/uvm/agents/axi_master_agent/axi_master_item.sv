@@ -35,6 +35,7 @@ class axi_master_item extends uvm_sequence_item;
   // ---------------------------------------------------------------------------
   rand int unsigned bready_delay;
   rand int unsigned rready_delay;
+  rand int unsigned wvalid_delay; // Cycles to delay WVALID after AWVALID
 
   // ---------------------------------------------------------------------------
   // Response Fields (Captured from DUT)
@@ -71,12 +72,14 @@ class axi_master_item extends uvm_sequence_item;
   constraint backpressure_delay_c {
     bready_delay inside {[0:10]};
     rready_delay inside {[0:10]};
+    soft wvalid_delay == 0;
   }
 
   // ---------------------------------------------------------------------------
   // UVM Automation Macros
   // ---------------------------------------------------------------------------
   `uvm_object_utils_begin(axi_master_item)
+    `uvm_field_int(wvalid_delay,   UVM_DEFAULT)
     `uvm_field_int(write,          UVM_DEFAULT)
     `uvm_field_int(addr,           UVM_HEX)
     `uvm_field_int(data,           UVM_HEX)

@@ -95,6 +95,9 @@ class axi_master_driver extends uvm_driver #(axi_master_item);
 
       // Write Data Channel
       begin : drive_w
+        if (tr.wvalid_delay > 0) begin
+          repeat (tr.wvalid_delay) @(vif.master_cb);
+        end
         @(vif.master_cb);
         vif.master_cb.wdata  <= tr.data;
         vif.master_cb.wstrb  <= tr.strb;

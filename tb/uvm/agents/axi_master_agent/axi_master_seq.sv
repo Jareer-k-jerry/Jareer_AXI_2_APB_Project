@@ -1,7 +1,8 @@
 // ==============================================================================
 // File: axi_master_seq.sv
-// Description: Directed sequences for AXI master validation.
-//              Provides single write, single read, and write-then-read sequences.
+// Description: Core basic sequences for AXI master VIP.
+//              Provides foundational atomic write, read, composite, and
+//              constrained-random transfer sequences.
 // ==============================================================================
 
 `ifndef AXI_MASTER_SEQ_SV

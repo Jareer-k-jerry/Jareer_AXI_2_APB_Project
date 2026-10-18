@@ -63,6 +63,12 @@ Coverage reports are generated automatically inside the `urgReport/` directory a
   ```bash
   make report TEST=axi2apb_random_100_trans_test
   ```
+- **To merge coverage across multiple tests (Cumulative Coverage):**
+  ```bash
+  make merge
+  ```
+  *Merges coverage databases from all executed tests into `./urgReport/dashboard.html` and lists all completed tests in the Tests dashboard section.*
+
 - **To view Dashboard in Firefox:**
   ```bash
   make code_covg_gui

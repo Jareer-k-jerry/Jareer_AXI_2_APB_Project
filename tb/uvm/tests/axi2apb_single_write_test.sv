@@ -16,8 +16,7 @@ class axi2apb_single_write_test extends axi2apb_base_test;
   endfunction : new
 
   virtual task run_phase(uvm_phase phase);
-    axi_single_write_seq          axi_wr_seq;
-    apb_slave_single_response_seq apb_rsp_seq;
+    axi2apb_single_write_vseq vseq;
 
     phase.raise_objection(this, "Starting axi2apb_single_write_test");
 
@@ -29,26 +28,14 @@ class axi2apb_single_write_test extends axi2apb_base_test;
     wait (axi_vif != null && axi_vif.ARESETn === 1'b1);
     #20ns;
 
-    fork
-      // Process 1: APB Slave reacts with immediate completion (0 wait cycles)
-      begin
-        apb_rsp_seq = apb_slave_single_response_seq::type_id::create("apb_rsp_seq");
-        apb_rsp_seq.wait_cycles  = 0;
-        apb_rsp_seq.inject_error = 1'b0;
-        apb_rsp_seq.start(apb_agent.sequencer);
-      end
-
-      // Process 2: AXI Master generates single legal write
-      begin
-        axi_wr_seq = axi_single_write_seq::type_id::create("axi_wr_seq");
-        axi_wr_seq.target_addr   = 32'h0000_1004;
-        axi_wr_seq.write_data    = 32'h1234_5678;
-        axi_wr_seq.trans_id      = 16'h00A1;
-        axi_wr_seq.user_val      = 10'h05A;
-        axi_wr_seq.bready_delay  = 0;
-        axi_wr_seq.start(axi_agent.sequencer);
-      end
-    join
+    // Execute Virtual Sequence on Virtual Sequencer
+    vseq = axi2apb_single_write_vseq::type_id::create("vseq");
+    vseq.target_addr = 32'h0000_1004;
+    vseq.write_data  = 32'h1234_5678;
+    vseq.trans_id    = 16'h00A1;
+    vseq.user_val    = 10'h05A;
+    vseq.wait_cycles = 0;
+    vseq.start(env.v_sequencer);
 
     // Allow time for monitors and scoreboard to sample and check
     #50ns;

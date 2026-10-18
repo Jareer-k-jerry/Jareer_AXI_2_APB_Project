@@ -17,9 +17,7 @@ class axi2apb_wait_state_test extends axi2apb_base_test;
   endfunction : new
 
   virtual task run_phase(uvm_phase phase);
-    axi_single_write_seq          axi_wr_seq;
-    axi_single_read_seq           axi_rd_seq;
-    apb_slave_single_response_seq apb_rsp_seq;
+    axi2apb_wait_state_vseq vseq;
 
     phase.raise_objection(this, "Starting axi2apb_wait_state_test");
 
@@ -31,49 +29,10 @@ class axi2apb_wait_state_test extends axi2apb_base_test;
     wait (axi_vif != null && axi_vif.ARESETn === 1'b1);
     #20ns;
 
-    // -------------------------------------------------------------------------
-    // Phase 1: Write transaction with 3 APB wait cycles
-    // -------------------------------------------------------------------------
-    `uvm_info(get_type_name(), "Executing Write transfer with 3 APB wait states...", UVM_LOW)
-    fork
-      begin
-        apb_rsp_seq = apb_slave_single_response_seq::type_id::create("apb_wr_wait_rsp");
-        apb_rsp_seq.wait_cycles  = 3;
-        apb_rsp_seq.inject_error = 1'b0;
-        apb_rsp_seq.start(apb_agent.sequencer);
-      end
-      begin
-        axi_wr_seq = axi_single_write_seq::type_id::create("axi_wr_seq");
-        axi_wr_seq.target_addr   = 32'h0000_3000;
-        axi_wr_seq.write_data    = 32'hAAAA_5555;
-        axi_wr_seq.trans_id      = 16'h00C1;
-        axi_wr_seq.user_val      = 10'h0CC;
-        axi_wr_seq.start(axi_agent.sequencer);
-      end
-    join
-
-    #30ns;
-
-    // -------------------------------------------------------------------------
-    // Phase 2: Read transaction with 4 APB wait cycles
-    // -------------------------------------------------------------------------
-    `uvm_info(get_type_name(), "Executing Read transfer with 4 APB wait states...", UVM_LOW)
-    fork
-      begin
-        apb_rsp_seq = apb_slave_single_response_seq::type_id::create("apb_rd_wait_rsp");
-        apb_rsp_seq.wait_cycles       = 4;
-        apb_rsp_seq.inject_error      = 1'b0;
-        apb_rsp_seq.default_read_data = 32'hAAAA_5555; // Expected read-back from memory
-        apb_rsp_seq.start(apb_agent.sequencer);
-      end
-      begin
-        axi_rd_seq = axi_single_read_seq::type_id::create("axi_rd_seq");
-        axi_rd_seq.target_addr   = 32'h0000_3000;
-        axi_rd_seq.trans_id      = 16'h00C2;
-        axi_rd_seq.user_val      = 10'h0DD;
-        axi_rd_seq.start(axi_agent.sequencer);
-      end
-    join
+    // Execute Virtual Sequence on Virtual Sequencer
+    `uvm_info(get_type_name(), "Executing axi2apb_wait_state_vseq on Virtual Sequencer...", UVM_LOW)
+    vseq = axi2apb_wait_state_vseq::type_id::create("vseq");
+    vseq.start(env.v_sequencer);
 
     #50ns;
 
