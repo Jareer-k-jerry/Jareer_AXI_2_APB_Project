@@ -13,7 +13,7 @@ SHELL := /bin/bash
 
 compile:
 	@mkdir -p ./out
-	vcs -sverilog -timescale=1ns/1ps -override_timescale -f build.flist -ntb_opts uvm-1.2 -cm line+tgl+cond+fsm -full64 -debug_all +UVM_TESTNAME=$(TEST)
+	vcs -sverilog -timescale=1ns/1ps -override_timescale -f build.flist -ntb_opts uvm-1.2 -cm line+tgl+cond+fsm -full64 -debug_all +define+VCS +UVM_TESTNAME=$(TEST)
 	@rm -rf ./out/build_$(TEST)
 	@mkdir -p ./out/build_$(TEST)
 	@for item in csrc simv.daidir simv.vdb simv vc_hdrs.h ucli.key; do \
@@ -70,7 +70,24 @@ run: compile sim
 # ============================================================
 
 gui:
-	cd ./out/build_$(TEST) && dve -vpd waveform.vpd
+	@test -d ./out/build_$(TEST) || (echo "ERROR: Directory ./out/build_$(TEST) not found. Run 'make run TEST=$(TEST)' first." && exit 1)
+	@if [ -f "./out/build_$(TEST)/waveform.vpd" ]; then \
+		echo ">>> Found waveform.vpd. Launching Synopsys DVE..."; \
+		cd ./out/build_$(TEST) && (dve -full64 -vpd waveform.vpd || dve -vpd waveform.vpd) & \
+	elif [ -f "./out/build_$(TEST)/waveform.vcd" ]; then \
+		echo ">>> Found waveform.vcd (VCD format)."; \
+		if command -v vcd2vpd >/dev/null 2>&1; then \
+			echo ">>> Converting waveform.vcd to waveform.vpd using vcd2vpd..."; \
+			cd ./out/build_$(TEST) && vcd2vpd waveform.vcd waveform.vpd && (dve -full64 -vpd waveform.vpd || dve -vpd waveform.vpd) & \
+		else \
+			echo ">>> Opening waveform.vcd directly with DVE / GTKWave..."; \
+			cd ./out/build_$(TEST) && (dve -full64 -vcd waveform.vcd || dve -vcd waveform.vcd || gtkwave waveform.vcd) & \
+		fi; \
+	else \
+		echo "ERROR: Neither waveform.vpd nor waveform.vcd found in ./out/build_$(TEST)/."; \
+		echo "Run the simulation first: 'make run TEST=$(TEST)'"; \
+		exit 1; \
+	fi
 
 
 # ============================================================

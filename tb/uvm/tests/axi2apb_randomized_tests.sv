@@ -158,9 +158,9 @@ class axi2apb_random_single_write_test extends axi2apb_base_test;
 
     #50ns;
 
-    if (env.scoreboard.matches != num_iterations || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_iterations || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_iterations, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_iterations, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("Successfully verified %0d randomized write transfers with 0 errors.", num_iterations), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -244,9 +244,9 @@ class axi2apb_random_single_read_test extends axi2apb_base_test;
 
     #50ns;
 
-    if (env.scoreboard.matches != num_iterations || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_iterations || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_iterations, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_iterations, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("Successfully verified %0d randomized read transfers with 0 errors.", num_iterations), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -354,9 +354,9 @@ class axi2apb_random_wait_state_test extends axi2apb_base_test;
 
     #50ns;
 
-    if (env.scoreboard.matches != 2 || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != 2 || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected 2), errors=%0d",
-                                            env.scoreboard.matches, env.scoreboard.errors))
+                                            env.scoreboard.match_count, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "Both randomized wait-state write and read verified successfully.", UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -498,10 +498,10 @@ class axi2apb_random_simultaneous_rw_test extends axi2apb_base_test;
 
     #80ns;
 
-    if (env.scoreboard.matches != 2 || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != 2 || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(),
         $sformatf("Priority test failed: expected matches=2 errors=0, got matches=%0d errors=%0d",
-                  env.scoreboard.matches, env.scoreboard.errors))
+                  env.scoreboard.match_count, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "Simultaneous read/write arbitration successfully verified with 0 errors.", UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -591,9 +591,9 @@ class axi2apb_random_rready_delay_test extends axi2apb_base_test;
 
     #50ns;
 
-    if (env.scoreboard.matches != num_iterations || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_iterations || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_iterations, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_iterations, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("Successfully verified %0d randomized iterations of delayed RREADY with 0 errors.", num_iterations), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -683,9 +683,9 @@ class axi2apb_random_bready_delay_test extends axi2apb_base_test;
 
     #50ns;
 
-    if (env.scoreboard.matches != num_iterations || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_iterations || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_iterations, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_iterations, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("Successfully verified %0d randomized iterations of delayed BREADY with 0 errors.", num_iterations), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -775,9 +775,9 @@ class axi2apb_random_b2b_reads_test extends axi2apb_base_test;
 
     #60ns;
 
-    if (env.scoreboard.matches != num_reads || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_reads || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_reads, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_reads, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("All %0d randomized back-to-back reads verified successfully.", num_reads), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -863,9 +863,9 @@ class axi2apb_random_b2b_writes_test extends axi2apb_base_test;
 
     #60ns;
 
-    if (env.scoreboard.matches != num_writes || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_writes || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_writes, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_writes, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("All %0d randomized back-to-back writes verified successfully.", num_writes), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -966,9 +966,9 @@ class axi2apb_random_mixed_traffic_test extends axi2apb_base_test;
 
     #60ns;
 
-    if (env.scoreboard.matches != total_trans || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != total_trans || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, total_trans, env.scoreboard.errors))
+                                            env.scoreboard.match_count, total_trans, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("All %0d randomized mixed transfers verified successfully.", total_trans), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -1073,9 +1073,9 @@ class axi2apb_random_diff_ids_users_test extends axi2apb_base_test;
 
     #60ns;
 
-    if (env.scoreboard.matches != num_trans || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_trans || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, num_trans, env.scoreboard.errors))
+                                            env.scoreboard.match_count, num_trans, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("All %0d randomized ID/USER transfers verified successfully.", num_trans), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -1175,9 +1175,9 @@ class axi2apb_random_pslverr_test extends axi2apb_base_test;
 
     #60ns;
 
-    if (env.scoreboard.matches != 2 || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != 2 || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected 2), errors=%0d",
-                                            env.scoreboard.matches, env.scoreboard.errors))
+                                            env.scoreboard.match_count, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "Randomized PSLVERR transfers verified successfully without deadlock.", UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)
@@ -1249,12 +1249,12 @@ class axi2apb_constrained_random_test extends axi2apb_base_test;
 
     // Verify scoreboard matches
     `uvm_info(get_type_name(), $sformatf("Scoreboard status: matches=%0d, errors=%0d (Expected matches=%0d)",
-                                         env.scoreboard.matches, env.scoreboard.errors, num_transactions), UVM_LOW)
+                                         env.scoreboard.match_count, env.scoreboard.errors, num_transactions), UVM_LOW)
 
-    if (env.scoreboard.matches != num_transactions || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != num_transactions || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(),
         $sformatf("Constrained-random test FAILED: expected matches=%0d errors=0, got matches=%0d errors=%0d",
-                  num_transactions, env.scoreboard.matches, env.scoreboard.errors))
+                  num_transactions, env.scoreboard.match_count, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(),
         $sformatf("Successfully verified %0d constrained-random transactions with 0 errors.", num_transactions), UVM_LOW)

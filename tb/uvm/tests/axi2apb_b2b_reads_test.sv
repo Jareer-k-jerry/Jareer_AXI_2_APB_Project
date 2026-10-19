@@ -78,9 +78,9 @@ class axi2apb_b2b_reads_test extends axi2apb_base_test;
     #60ns;
 
     // Verify scoreboard metrics
-    if (env.scoreboard.matches != NUM_B2B_READS || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != NUM_B2B_READS || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, NUM_B2B_READS, env.scoreboard.errors))
+                                            env.scoreboard.match_count, NUM_B2B_READS, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), $sformatf("All %0d back-to-back reads verified successfully by scoreboard.", NUM_B2B_READS), UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)

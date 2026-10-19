@@ -37,9 +37,9 @@ class axi2apb_wait_state_test extends axi2apb_base_test;
     #50ns;
 
     // Direct check of scoreboard metrics
-    if (env.scoreboard.matches != 2 || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != 2 || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Test check failed: matches=%0d (expected 2), errors=%0d",
-                                            env.scoreboard.matches, env.scoreboard.errors))
+                                            env.scoreboard.match_count, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "Both wait-state write (3 cycles) and read (4 cycles) verified successfully.", UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)

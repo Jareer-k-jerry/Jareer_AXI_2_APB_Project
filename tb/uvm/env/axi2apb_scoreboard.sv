@@ -30,7 +30,7 @@ class axi2apb_scoreboard extends uvm_scoreboard;
   // ---------------------------------------------------------------------------
   // Verification Metrics & Statistics
   // ---------------------------------------------------------------------------
-  int unsigned matches;
+  int unsigned match_count;
   int unsigned errors;
 
   int unsigned axi_write_count;
@@ -58,7 +58,7 @@ class axi2apb_scoreboard extends uvm_scoreboard;
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     void'(uvm_config_db#(bit)::get(this, "", "check_expected_transactions", check_expected_transactions));
-    matches         = 0;
+    match_count = 0;
     errors          = 0;
     axi_write_count = 0;
     axi_read_count  = 0;
@@ -215,7 +215,7 @@ class axi2apb_scoreboard extends uvm_scoreboard;
       // 6. Match Disposition
       // -----------------------------------------------------------------------
       if (trans_errors == 0) begin
-        matches++;
+        match_count++;
         `uvm_info("SCB_MATCH",
           $sformatf("MATCHED %s at addr=0x%08h: Data=0x%08h ID=0x%04h USER=0x%03h RESP=%02b",
                     axi_tr.write ? "WRITE" : "READ",
@@ -261,13 +261,13 @@ class axi2apb_scoreboard extends uvm_scoreboard;
     `uvm_info(get_type_name(), $sformatf("  Total APB Transfers Monitored: %0d (Writes: %0d, Reads: %0d)",
                                         apb_write_count + apb_read_count, apb_write_count, apb_read_count), UVM_LOW)
     `uvm_info(get_type_name(), $sformatf("  Total APB PSLVERR Events     : %0d", pslverr_count), UVM_LOW)
-    `uvm_info(get_type_name(), $sformatf("  Successfully Matched Transfers: %0d", matches), UVM_LOW)
+    `uvm_info(get_type_name(), $sformatf("  Successfully Matched Transfers: %0d", match_count), UVM_LOW)
     `uvm_info(get_type_name(), $sformatf("  Total Scoreboard Discrepancies: %0d", errors), UVM_LOW)
     `uvm_info(get_type_name(), "-----------------------------------------------------------------", UVM_LOW)
 
-    if (errors == 0 && matches > 0) begin
+    if (errors == 0 && match_count > 0) begin
       `uvm_info(get_type_name(), "  >>> SCOREBOARD RESULT: ALL TRANSACTIONS MATCHED (PASSED) <<<   ", UVM_LOW)
-    end else if (errors == 0 && matches == 0) begin
+    end else if (errors == 0 && match_count == 0) begin
       if (!check_expected_transactions) begin
         `uvm_info(get_type_name(), "  >>> SCOREBOARD RESULT: ZERO TRANSACTIONS EXPECTED (IDLE/SMOKE TEST PASSED) <<<", UVM_LOW)
       end else begin

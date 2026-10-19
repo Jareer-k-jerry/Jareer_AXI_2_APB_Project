@@ -222,8 +222,15 @@ module axi2apb_tb_top;
   // Waveform Dumps
   // ---------------------------------------------------------------------------
   initial begin
+    // Standard VCD format (universal: GTKWave, ModelSim, Questa)
     $dumpfile("waveform.vcd");
     $dumpvars(0, axi2apb_tb_top);
+
+    // Synopsys VCS native VPD format (optimized for Synopsys DVE)
+    `ifdef VCS
+      $vcdplusfile("waveform.vpd");
+      $vcdpluson(0, axi2apb_tb_top);
+    `endif
   end
 
 endmodule

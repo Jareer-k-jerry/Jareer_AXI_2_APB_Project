@@ -111,9 +111,9 @@ class axi2apb_diff_ids_users_test extends axi2apb_base_test;
     #60ns;
 
     // Verify scoreboard metrics
-    if (env.scoreboard.matches != NUM_ID_TESTS || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != NUM_ID_TESTS || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(), $sformatf("Scoreboard check failed: matches=%0d (expected %0d), errors=%0d",
-                                            env.scoreboard.matches, NUM_ID_TESTS, env.scoreboard.errors))
+                                            env.scoreboard.match_count, NUM_ID_TESTS, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(), "All distinct ID and USER boundary transfers verified successfully by scoreboard.", UVM_LOW)
       `uvm_info(get_type_name(), "=================================================================", UVM_LOW)

@@ -166,12 +166,12 @@ class axi2apb_simultaneous_rw_test extends axi2apb_base_test;
     // -------------------------------------------------------------------------
     `uvm_info(get_type_name(),
       $sformatf("Scoreboard final state: matches=%0d, errors=%0d",
-                env.scoreboard.matches, env.scoreboard.errors), UVM_LOW)
+                env.scoreboard.match_count, env.scoreboard.errors), UVM_LOW)
 
-    if (env.scoreboard.matches != 2 || env.scoreboard.errors != 0) begin
+    if (env.scoreboard.match_count != 2 || env.scoreboard.errors != 0) begin
       `uvm_error(get_type_name(),
         $sformatf("Priority test FAILED: expected matches=2 errors=0, got matches=%0d errors=%0d",
-                  env.scoreboard.matches, env.scoreboard.errors))
+                  env.scoreboard.match_count, env.scoreboard.errors))
     end else begin
       `uvm_info(get_type_name(),
         "Both read (priority-serviced first) and write transactions verified by scoreboard.", UVM_LOW)
